@@ -38,7 +38,7 @@ document.getElementById('translateBtn').addEventListener('click', async () => {
   const inputText = document.getElementById('inputText').value;
   const targetLang = document.getElementById('targetLang').value;
 
-  const res = await fetch('http://localhost:5000/api/translate', {
+  const res = await fetch('https://pooriya-pitranslate.hosting.codeyourfuture.io/api/translate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ inputText, targetLang })
@@ -60,7 +60,7 @@ document.getElementById('inputText').addEventListener('mouseup', async () => {
   const targetLang = document.getElementById('targetLang').value;
 
   if (selectedText.length > 0) {
-    const res = await fetch('http://localhost:5000/api/translate', {
+    const res = await fetch('https://pooriya-pitranslate.hosting.codeyourfuture.io/api/translate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ inputText: selectedText, targetLang })
@@ -75,7 +75,7 @@ document.getElementById('inputText').addEventListener('mouseup', async () => {
 
 document.getElementById('detailsBtn').addEventListener('click', async () => {
   const inputText = document.getElementById('inputText').value;
-  const res = await fetch('http://localhost:5000/api/details', {
+  const res = await fetch('https://pooriya-pitranslate.hosting.codeyourfuture.io/api/details', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ inputText })
@@ -89,7 +89,7 @@ document.getElementById('detailsBtn').addEventListener('click', async () => {
 
 document.getElementById('idiomBtn').addEventListener('click', async () => {
   const inputText = document.getElementById('inputText').value;
-  const res = await fetch('http://localhost:5000/api/idiom', {
+  const res = await fetch('https://pooriya-pitranslate.hosting.codeyourfuture.io/api/idiom', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ inputText })
