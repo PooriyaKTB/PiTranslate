@@ -50,3 +50,14 @@ document.getElementById('detailsBtn').addEventListener('click', async () => {
     <h4>Synonyms:</h4><p>${data.synonyms}</p>
   `;
 });
+
+document.getElementById('idiomBtn').addEventListener('click', async () => {
+  const inputText = document.getElementById('inputText').value;
+  const res = await fetch('http://localhost:5000/api/idiom', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ inputText })
+  });
+  const data = await res.json();
+  document.getElementById('idiomOutput').innerHTML = `<h4>Related Idiom:</h4><p>${data.idiom}</p>`;
+});
