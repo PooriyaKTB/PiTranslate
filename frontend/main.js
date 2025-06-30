@@ -2,12 +2,37 @@ function updateFavoritesUI() {
   const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
   const list = document.getElementById('favoritesList');
   list.innerHTML = "";
-  favorites.forEach((item, index) => {
+  favorites.forEach((item) => {
     const li = document.createElement('li');
     li.textContent = `📌 ${item.text} → ${item.translation}`;
     list.appendChild(li);
   });
 }
+
+function getNextPractice() {
+  const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+  if (favorites.length === 0) {
+    return null;
+  }
+  const index = Math.floor(Math.random() * favorites.length);
+  return favorites[index];
+}
+
+document.getElementById('nextPracticeBtn').addEventListener('click', () => {
+  const practice = getNextPractice();
+  const box = document.getElementById('practiceArea');
+  if (!practice) {
+    box.textContent = "No favorites to practice.";
+    return;
+  }
+  box.innerHTML = `
+    <p><strong>Translate this:</strong> ${practice.text}</p>
+    <details>
+      <summary>Show Answer</summary>
+      <p>${practice.translation}</p>
+    </details>
+  `;
+});
 
 document.getElementById('translateBtn').addEventListener('click', async () => {
   const inputText = document.getElementById('inputText').value;
