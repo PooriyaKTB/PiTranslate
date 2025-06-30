@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PiTranslate</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>PiTranslate</h1>
+  <div class="auth-container">
+    <button onclick="location.href='login.html'">Login</button>
+    <button onclick="location.href='signup.html'">Sign Up</button>
+  </div>
+  <div class="translator">
+    <textarea id="inputText" placeholder="Enter text..."></textarea>
+    <select id="targetLang">
+      <option value="French">French</option>
+      <option value="German">German</option>
+      <option value="Persian">Persian</option>
+      <option value="Arabic">Arabic</option>
+      <option value="Chinese">Chinese</option>
+      <option value="Japanese">Japanese</option>
+      <option value="Spanish">Spanish</option>
+      <option value="Russian">Russian</option>
+      <option value="English (UK)">English (UK)</option>
+      <option value="English (US)">English (US)</option>
+    </select>
+    <button id="translateBtn">Translate</button>
+    <button id="speakBtn">🔊 Speak</button>
+    <button id="idiomBtn">💡 Idiom</button>
+    <p id="output"></p>
+    <button id="favBtn">⭐ Add to Favorites</button>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>

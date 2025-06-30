@@ -1,0 +1,25 @@
+const express = require('express');
+const router = express.Router();
+const { Configuration, OpenAIApi } = require('openai');
+
+const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAIApi(configuration);
+
+router.post('/', async (req, res) => {
+  const { inputText, targetLang, inputLang, highlight } = req.body;
+  try {
+    const prompt = `Translate this ${inputLang || 'auto-detected'} text to ${targetLang} and keep the meaning precise:\n"${inputText}"`;
+
+    const response = await openai.createChatCompletion({
+      model: 'gpt-3.5-turbo',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.4
+    });
+
+    res.json({ translation: response.data.choices[0].message.content.trim() });
+  } catch (err) {
+    res.status(500).json({ error: 'Translation failed', details: err.message });
+  }
+});
+
+module.exports = router;
