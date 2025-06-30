@@ -1,6 +1,14 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
+require("dotenv").config({
+    path: process.env.NODE_ENV === "production" ? undefined : ".env"
+  });
+  
+  if (!process.env.OPENAI_API_KEY) {
+    console.error("❌ OPENAI_API_KEY is missing!");
+    process.exit(1);
+  }
+  
 const translateRoutes = require('./routes/translate');
 const detailRoutes = require('./routes/details');
 const idiomRoutes = require('./routes/idiom');
