@@ -1,13 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <title>PiTranslate</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>PiTranslate</h1>
-  <div class="translator">
+  <header>
+    <h1>🌍 PiTranslate</h1>
+    <button id="themeToggle">🌓 Toggle Theme</button>
+  </header>
+  <main class="translator">
     <textarea id="inputText" placeholder="Enter text..."></textarea>
     <select id="targetLang">
       <option value="French">French</option>
@@ -21,23 +24,29 @@
       <option value="English (UK)">English (UK)</option>
       <option value="English (US)">English (US)</option>
     </select>
-    <button id="translateBtn">Translate</button>
-    <button id="speakBtn">🔊 Speak</button>
-    <button id="detailsBtn">📚 Details</button>
-    <button id="idiomBtn">💡 Idiom</button>
-    <button id="favBtn">⭐ Add to Favorites</button>
+    <div class="btn-group">
+      <button id="translateBtn">Translate</button>
+      <button id="speakBtn">🔊 Speak</button>
+      <button id="detailsBtn">📚 Details</button>
+      <button id="idiomBtn">💡 Idiom</button>
+      <button id="favBtn">⭐ Favorite</button>
+    </div>
     <p id="output"></p>
     <div id="highlightTranslation"></div>
     <div id="extraDetails"></div>
     <div id="idiomOutput"></div>
-  </div>
+  </main>
 
-  <h3>⭐ Favorites</h3>
-  <ul id="favoritesList"></ul>
+  <section>
+    <h3>⭐ Favorites</h3>
+    <ul id="favoritesList"></ul>
+  </section>
 
-  <h3>📚 Spaced Repetition Practice</h3>
-  <button id="nextPracticeBtn">Next Word</button>
-  <div id="practiceArea"></div>
+  <section>
+    <h3>📚 Spaced Repetition Practice</h3>
+    <button id="nextPracticeBtn">Next Word</button>
+    <div id="practiceArea"></div>
+  </section>
 
   <script src="main.js"></script>
 </body>
