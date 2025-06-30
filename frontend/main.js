@@ -1,3 +1,14 @@
+function updateFavoritesUI() {
+  const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+  const list = document.getElementById('favoritesList');
+  list.innerHTML = "";
+  favorites.forEach((item, index) => {
+    const li = document.createElement('li');
+    li.textContent = `📌 ${item.text} → ${item.translation}`;
+    list.appendChild(li);
+  });
+}
+
 document.getElementById('translateBtn').addEventListener('click', async () => {
   const inputText = document.getElementById('inputText').value;
   const targetLang = document.getElementById('targetLang').value;
@@ -61,3 +72,16 @@ document.getElementById('idiomBtn').addEventListener('click', async () => {
   const data = await res.json();
   document.getElementById('idiomOutput').innerHTML = `<h4>Related Idiom:</h4><p>${data.idiom}</p>`;
 });
+
+document.getElementById('favBtn').addEventListener('click', () => {
+  const inputText = document.getElementById('inputText').value;
+  const translation = document.getElementById('output').textContent;
+  if (!inputText || !translation) return;
+
+  const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+  favorites.push({ text: inputText, translation });
+  localStorage.setItem('favorites', JSON.stringify(favorites));
+  updateFavoritesUI();
+});
+
+updateFavoritesUI();
