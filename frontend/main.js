@@ -18,7 +18,6 @@ document.getElementById('speakBtn').addEventListener('click', () => {
   speechSynthesis.speak(utterance);
 });
 
-// Detect selected word in textarea
 document.getElementById('inputText').addEventListener('mouseup', async () => {
   const textarea = document.getElementById('inputText');
   const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
@@ -36,4 +35,18 @@ document.getElementById('inputText').addEventListener('mouseup', async () => {
   } else {
     document.getElementById('highlightTranslation').textContent = "";
   }
+});
+
+document.getElementById('detailsBtn').addEventListener('click', async () => {
+  const inputText = document.getElementById('inputText').value;
+  const res = await fetch('http://localhost:5000/api/details', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ inputText })
+  });
+  const data = await res.json();
+  document.getElementById('extraDetails').innerHTML = `
+    <h4>Examples:</h4><p>${data.examples}</p>
+    <h4>Synonyms:</h4><p>${data.synonyms}</p>
+  `;
 });

@@ -6,9 +6,10 @@ const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
 const openai = new OpenAIApi(configuration);
 
 router.post('/', async (req, res) => {
-  const { inputText, targetLang, inputLang, highlight } = req.body;
+  const { inputText, targetLang, inputLang } = req.body;
   try {
-    const prompt = `Translate this ${inputLang || 'auto-detected'} text to ${targetLang} and keep the meaning precise:\n"${inputText}"`;
+    const prompt = `Translate this ${inputLang || 'auto-detected'} text to ${targetLang}:
+"${inputText}"`;
 
     const response = await openai.createChatCompletion({
       model: 'gpt-3.5-turbo',
