@@ -7,10 +7,6 @@
 </head>
 <body>
   <h1>PiTranslate</h1>
-  <div class="auth-container">
-    <button onclick="location.href='login.html'">Login</button>
-    <button onclick="location.href='signup.html'">Sign Up</button>
-  </div>
   <div class="translator">
     <textarea id="inputText" placeholder="Enter text..."></textarea>
     <select id="targetLang">
@@ -27,9 +23,8 @@
     </select>
     <button id="translateBtn">Translate</button>
     <button id="speakBtn">🔊 Speak</button>
-    <button id="idiomBtn">💡 Idiom</button>
     <p id="output"></p>
-    <button id="favBtn">⭐ Add to Favorites</button>
+    <p id="highlightTranslation"></p>
   </div>
   <script src="main.js"></script>
 </body>
