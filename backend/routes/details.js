@@ -1,32 +1,27 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 const OpenAI = require("openai");
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-
-router.post('/', async (req, res) => {
+router.post("/", async (req, res) => {
   const { inputText } = req.body;
+
   try {
-    const prompt = `Provide a list of common synonyms and 2 usage examples for the word or phrase: "${inputText}"`;
+    const prompt = `Provide two different example sentences using the word or phrase "${inputText}", and list some common synonyms for it.`;
 
-    const response = await openai.createChatCompletion({
-      model: 'gpt-3.5-turbo',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.5
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.5,
     });
 
-    const output = response.data.choices[0].message.content.trim();
-    const [examples, synonyms] = output.split(/Synonyms?:/i);
-
-    res.json({
-      examples: examples.replace(/Examples?:/i, '').trim(),
-      synonyms: synonyms ? synonyms.trim() : 'No synonyms found.'
-    });
-  } catch (err) {
-    res.status(500).json({ error: 'Detail lookup failed', details: err.message });
+    const content = completion.choices[0].message.content.trim();
+    res.json({ result: content });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "Details generation failed", details: error.message });
   }
 });
 
