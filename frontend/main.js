@@ -38,6 +38,12 @@ document.getElementById("translateBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
   const targetLang = document.getElementById("targetLang").value;
 
+  if (!inputText.trim()) {
+    document.getElementById("output").innerText =
+      "Please enter text to translate.";
+    return;
+  }
+
   const res = await fetch(
     "https://pooriya-pitranslate.hosting.codeyourfuture.io/api/translate",
     {
@@ -79,7 +85,7 @@ document.getElementById("inputText").addEventListener("mouseup", async () => {
     const data = await res.json();
     document.getElementById(
       "highlightTranslation"
-    ).textContent = `🔎 "${selectedText}" means: ${data.translation}`;
+    ).textContent = `🔎 "${selectedText}" → ${data.translation}`;
   } else {
     document.getElementById("highlightTranslation").textContent = "";
   }
@@ -90,12 +96,19 @@ document.getElementById("detailsBtn").addEventListener("click", async () => {
   const inputLang = document.getElementById("inputLang").value;
   const targetLang = document.getElementById("targetLang").value;
 
+  if (!inputText.trim()) {
+    document.getElementById("extraDetails").innerHTML = `
+      <p style="color: red;"Please enter a word or phrase first!/p>
+    `;
+    return;
+  }
+
   const res = await fetch(
     "https://pooriya-pitranslate.hosting.codeyourfuture.io/api/details",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ inputText, inputLang, targetLang  }),
+      body: JSON.stringify({ inputText, inputLang, targetLang }),
     }
   );
   const data = await res.json();
@@ -108,7 +121,7 @@ document.getElementById("detailsBtn").addEventListener("click", async () => {
     .map((s) => `${s.word} → ${s.translation}`)
     .join("<br>");
 
- document.getElementById("extraDetails").innerHTML = `
+  document.getElementById("extraDetails").innerHTML = `
     <h4>Examples:</h4>
     <p>${examplesText}</p>
     <h4>Synonyms:</h4>
@@ -118,6 +131,12 @@ document.getElementById("detailsBtn").addEventListener("click", async () => {
 
 document.getElementById("idiomBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
+  if (!inputText.trim()) {
+    document.getElementById("idiomOutput").innerHTML =
+      "<p style= color: red; Please enter a word or phrase first!</p>";
+    return;
+  }
+
   const res = await fetch(
     "https://pooriya-pitranslate.hosting.codeyourfuture.io/api/idiom",
     {
@@ -150,6 +169,7 @@ document.getElementById("themeToggle").addEventListener("click", () => {
   html.setAttribute("data-theme", next);
   localStorage.setItem("theme", next);
 });
+
 window.addEventListener("DOMContentLoaded", () => {
   const savedTheme = localStorage.getItem("theme") || "light";
   document.documentElement.setAttribute("data-theme", savedTheme);
