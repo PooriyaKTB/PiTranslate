@@ -87,18 +87,32 @@ document.getElementById("inputText").addEventListener("mouseup", async () => {
 
 document.getElementById("detailsBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
+  const inputLang = document.getElementById("inputLang").value;
+  const targetLang = document.getElementById("targetLang").value;
+
   const res = await fetch(
     "https://pooriya-pitranslate.hosting.codeyourfuture.io/api/details",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ inputText }),
+      body: JSON.stringify({ inputText, inputLang, targetLang  }),
     }
   );
   const data = await res.json();
-  document.getElementById("extraDetails").innerHTML = `
-    <h4>Examples:</h4><p>${data.examples}</p>
-    <h4>Synonyms:</h4><p>${data.synonyms}</p>
+
+  const examplesText = data.examples
+    .map((ex) => `${ex.text} → ${ex.translation}`)
+    .join("<br>");
+
+  const synonymsText = data.synonyms
+    .map((s) => `${s.word} → ${s.translation}`)
+    .join("<br>");
+
+ document.getElementById("extraDetails").innerHTML = `
+    <h4>Examples:</h4>
+    <p>${examplesText}</p>
+    <h4>Synonyms:</h4>
+    <p>${synonymsText}</p>
   `;
 });
 
