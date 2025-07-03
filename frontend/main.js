@@ -55,6 +55,7 @@ document.getElementById("translateBtn").addEventListener("click", async () => {
 document.getElementById("speakBtn").addEventListener("click", () => {
   const text = document.getElementById("output").textContent;
   const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = document.getElementById("targetLang").value;
   speechSynthesis.speak(utterance);
 });
 

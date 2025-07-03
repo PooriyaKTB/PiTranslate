@@ -8,7 +8,11 @@ router.post("/", async (req, res) => {
   const { inputText } = req.body;
 
   try {
-    const prompt = `Provide two different example sentences using the word or phrase "${inputText}", and list some common synonyms for it.`;
+    const prompt = `Provide two different example sentences using the word or phrase "${inputText}", and list some common synonyms for it.Return the result in this exact JSON format:
+{
+  "examples": ["sentence 1", "sentence 2"],
+  "synonyms": ["synonym 1", "synonym 2"]
+}`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
@@ -17,7 +21,13 @@ router.post("/", async (req, res) => {
     });
 
     const content = completion.choices[0].message.content.trim();
-    res.json({ result: content });
+
+    const parsed = JSON.parse(content); 
+
+    res.json({
+      examples: parsed.examples || "Not available",
+      synonyms: parsed.synonyms || "Not available",
+    });
   } catch (error) {
     res
       .status(500)
