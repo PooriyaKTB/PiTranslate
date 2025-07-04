@@ -148,3 +148,35 @@ window.addEventListener("DOMContentLoaded", () => {
   document.documentElement.setAttribute("data-theme", savedTheme);
   renderFavorites();
 });
+
+const modal = document.getElementById("clearModal");
+const confirmBtn = document.getElementById("confirmClearBtn");
+const cancelBtn = document.getElementById("cancelClearBtn");
+const checkbox = document.getElementById("skipConfirmCheckbox");
+
+document.getElementById("clearFavoritesBtn").addEventListener("click", () => {
+  if (localStorage.getItem("skipDeleteConfirm") === "true") {
+    clearFavoritesNow();
+  } else {
+    modal.classList.remove("hidden");
+  }
+});
+
+confirmBtn.addEventListener("click", () => {
+  if (checkbox.checked) {
+    localStorage.setItem("skipDeleteConfirm", "true");
+  }
+  clearFavoritesNow();
+  modal.classList.add("hidden");
+});
+
+cancelBtn.addEventListener("click", () => {
+  modal.classList.add("hidden");
+});
+
+function clearFavoritesNow() {
+  localStorage.removeItem("favorites");
+  localStorage.removeItem("practiceIndex");
+  renderFavorites();
+  document.getElementById("practiceArea").innerHTML = "";
+}

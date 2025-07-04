@@ -40,6 +40,7 @@
     <section>
       <h3>⭐ Favorites</h3>
       <ul id="favoritesList"></ul>
+      <button id="clearFavoritesBtn">🗑 Clear All Favorites</button>
     </section>
 
     <section>
@@ -47,6 +48,21 @@
       <button id="nextPracticeBtn">Next Word</button>
       <div id="practiceArea"></div>
     </section>
+
+    <!-- Clear Modal -->
+    <div id="clearModal" class="modal hidden">
+      <div class="modal-content">
+        <p>Are you sure you want to clear all favorites?</p>
+        <label
+          ><input type="checkbox" id="skipConfirmCheckbox" /> Don't show this
+          again</label
+        >
+        <div class="modal-actions">
+          <button id="confirmClearBtn">Yes, clear all</button>
+          <button id="cancelClearBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="main.js"></script>
   </body>
