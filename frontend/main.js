@@ -13,7 +13,8 @@ document.getElementById("translateBtn").addEventListener("click", async () => {
   const targetLang = document.getElementById("targetLang").value;
 
   if (!inputText.trim()) {
-    document.getElementById("output").innerText = "Please enter text to translate.";
+    document.getElementById("output").innerText =
+      "Please enter text to translate.";
     return;
   }
 
@@ -24,7 +25,8 @@ document.getElementById("translateBtn").addEventListener("click", async () => {
   });
 
   const data = await res.json();
-  document.getElementById("output").textContent = data.translation || "Translation failed";
+  document.getElementById("output").textContent =
+    data.translation || "Translation failed";
 });
 
 document.getElementById("speakBtn").addEventListener("click", () => {
@@ -39,7 +41,8 @@ document.getElementById("detailsBtn").addEventListener("click", async () => {
   const targetLang = document.getElementById("targetLang").value;
 
   if (!inputText.trim()) {
-    document.getElementById("extraDetails").innerHTML = "<p style='color: red;'>Please enter a word or phrase first!</p>";
+    document.getElementById("extraDetails").innerHTML =
+      "<p style='color: red;'>Please enter a word or phrase first!</p>";
     return;
   }
 
@@ -51,8 +54,17 @@ document.getElementById("detailsBtn").addEventListener("click", async () => {
 
   const data = await res.json();
 
-  const examplesText = data.examples.map((ex) => `${ex.text} → ${ex.translation}`).join("<br>");
-  const synonymsText = data.synonyms.map((s) => `${s.word} → ${s.translation}`).join("<br>");
+  const examplesText = Array.isArray(data.examples)
+    ? data.examples
+        .map((ex) => `${ex?.text || ""} → ${ex?.translation || ""}`)
+        .join("<br>")
+    : "No examples available.";
+
+  const synonymsText = Array.isArray(data.synonyms)
+    ? data.synonyms
+        .map((s) => `${s?.word || ""} → ${s?.translation || ""}`)
+        .join("<br>")
+    : "No synonyms available.";
 
   document.getElementById("extraDetails").innerHTML = `
     <h4>Examples:</h4><p>${examplesText}</p>
@@ -65,14 +77,15 @@ document.getElementById("idiomBtn").addEventListener("click", async () => {
   const targetLang = document.getElementById("targetLang").value;
 
   if (!inputText.trim()) {
-    document.getElementById("idiomOutput").innerHTML = "<p style='color: red;'>Please enter a word or phrase first.</p>";
+    document.getElementById("idiomOutput").innerHTML =
+      "<p style='color: red;'>Please enter a word or phrase first.</p>";
     return;
   }
 
   const res = await fetch(`${API_BASE}/idiom`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ inputText, targetLang }),
+    body: JSON.stringify({ inputText, targetLang, inputLang: "auto" }),
   });
 
   const data = await res.json();
@@ -100,7 +113,11 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
     return;
   }
 
-  const item = dueItems[Math.floor(Math.random() * dueItems.length)];
+  const sorted = dueItems.sort(
+    (a, b) => new Date(a.nextReview || 0) - new Date(b.nextReview || 0)
+  );
+  const item = sorted[0];
+
   box.innerHTML = `
     <p><strong>Translate this:</strong> ${item.text}</p>
     <details><summary>Show Answer</summary><p>${item.translation}</p></details>

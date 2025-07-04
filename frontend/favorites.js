@@ -8,7 +8,9 @@ export function saveFavorites(favorites) {
 
 export function addFavorite({ text, translation }) {
   const favorites = loadFavorites();
-  const exists = favorites.some(f => f.text === text);
+  const exists = favorites.some(
+    (f) => f.text.trim().toLowerCase() === text.trim().toLowerCase()
+  );
   if (exists) return;
   favorites.push({
     id: crypto.randomUUID(),
@@ -16,13 +18,13 @@ export function addFavorite({ text, translation }) {
     translation,
     addedAt: new Date().toISOString(),
     reviewed: 0,
-    nextReview: null
+    nextReview: null,
   });
   saveFavorites(favorites);
 }
 
 export function removeFavorite(id) {
-  const favorites = loadFavorites().filter(f => f.id !== id);
+  const favorites = loadFavorites().filter((f) => f.id !== id);
   saveFavorites(favorites);
 }
 
