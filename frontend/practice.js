@@ -21,6 +21,12 @@ export function scheduleReview(item, knewIt) {
     favorites[index].reviewed = 0;
     favorites[index].nextReview = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString();
   }
+  const remaining = favorites.filter((item) => {
+    return !item.nextReview || new Date(item.nextReview).getTime() <= Date.now();
+  });
+  if (remaining.length === 0) {
+    console.log("🎉 All practiced!");
+  }
 
   saveFavorites(favorites);
 }

@@ -34,6 +34,8 @@ export function renderFavorites() {
   list.innerHTML = "";
 
   const clearBtn = document.getElementById("clearFavoritesBtn");
+  if (!clearBtn) return;
+
   if (favorites.length < 2) {
     clearBtn.classList.add("hidden");
   } else {
@@ -45,5 +47,6 @@ export function renderFavorites() {
     li.innerHTML = `📌 <strong>${item.text}</strong> → ${item.translation}
       <button onclick="removeFavoriteAndRender('${item.id}')">❌</button>`;
     list.appendChild(li);
+    updatePracticeButton();
   });
 }

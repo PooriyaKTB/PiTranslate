@@ -103,14 +103,22 @@ document.getElementById("favBtn").addEventListener("click", () => {
   if (!inputText || !translation) return;
   addFavorite({ text: inputText, translation });
   renderFavorites();
+  updatePracticeButton();
 });
 
 document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   const dueItems = getDueItems();
   const box = document.getElementById("practiceArea");
   if (dueItems.length === 0) {
-    box.textContent = "No favorites ready to practice.";
-    return;
+    box.textContent = `
+      <p>🎉 Well done! You practiced all words.</p>
+      <button id="restartBtn">🔁 Restart Practice</button>
+    `;
+    document.getElementById("restartBtn").onclick = () => {
+      updatePracticeButton();
+      document.getElementById("nextPracticeBtn").click();
+    };
+  return;
   }
 
   const sorted = dueItems.sort(
@@ -145,6 +153,23 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   };
 });
 
+function updatePracticeButton() {
+  const btn = document.getElementById("nextPracticeBtn");
+  if (!btn) return;
+
+  const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+  const dueItems = favorites.filter((item) => {
+    return !item.nextReview || new Date(item.nextReview).getTime() <= Date.now();
+  });
+
+  if (dueItems.length < 1) {
+    btn.style.display = "none";
+  } else {
+    btn.style.display = "inline-block";
+    btn.textContent = dueItems.length === 1 ? "▶️ Start Practice" : "➡️ Next Word";
+  }
+}
+
 document.getElementById("themeToggle").addEventListener("click", () => {
   const html = document.documentElement;
   const current = html.getAttribute("data-theme");
@@ -157,6 +182,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const savedTheme = localStorage.getItem("theme") || "light";
   document.documentElement.setAttribute("data-theme", savedTheme);
   renderFavorites();
+  updatePracticeButton();
 });
 
 const modal = document.getElementById("clearModal");
@@ -188,5 +214,6 @@ function clearFavoritesNow() {
   localStorage.removeItem("favorites");
   localStorage.removeItem("practiceIndex");
   renderFavorites();
+  updatePracticeButton();
   document.getElementById("practiceArea").innerHTML = "";
 }
