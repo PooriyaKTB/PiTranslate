@@ -108,6 +108,7 @@ document.getElementById("favBtn").addEventListener("click", () => {
 
 document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   const dueItems = getDueItems();
+  localStorage.setItem("practiceStarted", "true");
   const box = document.getElementById("practiceArea");
   if (dueItems.length === 0) {
     box.innerHTML = `
@@ -115,6 +116,7 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
       <button id="restartBtn">🔁 Restart Practice</button>
     `;
     document.getElementById("restartBtn").onclick = () => {
+      localStorage.removeItem("practiceStarted");
       updatePracticeButton();
       document.getElementById("nextPracticeBtn").click();
     };
@@ -163,12 +165,14 @@ function updatePracticeButton() {
   const dueItems = favorites.filter((item) => {
     return !item.nextReview || new Date(item.nextReview).getTime() <= Date.now();
   });
+  
+  const started = localStorage.getItem("practiceStarted") === "true";
 
   if (dueItems.length < 1) {
     btn.style.display = "none";
   } else {
     btn.style.display = "inline-block";
-    btn.textContent = dueItems.length === 1 ? "▶️ Start Practice" : "➡️ Next Word";
+    btn.textContent = started ? "➡️ Next Word" : "▶️ Start Practice";
   }
 }
 
@@ -215,6 +219,7 @@ cancelBtn.addEventListener("click", () => {
 function clearFavoritesNow() {
   localStorage.removeItem("favorites");
   localStorage.removeItem("practiceIndex");
+  localStorage.removeItem("practiceStarted");
   renderFavorites();
   updatePracticeButton();
   document.getElementById("practiceArea").innerHTML = "";
