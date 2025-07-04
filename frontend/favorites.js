@@ -32,6 +32,14 @@ export function renderFavorites() {
   const favorites = loadFavorites();
   const list = document.getElementById("favoritesList");
   list.innerHTML = "";
+
+  const clearBtn = document.getElementById("clearFavoritesBtn");
+  if (favorites.length < 2) {
+    clearBtn.classList.add("hidden");
+  } else {
+    clearBtn.classList.remove("hidden");
+  }
+
   favorites.forEach((item) => {
     const li = document.createElement("li");
     li.innerHTML = `📌 <strong>${item.text}</strong> → ${item.translation}

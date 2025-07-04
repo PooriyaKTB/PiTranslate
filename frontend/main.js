@@ -120,10 +120,20 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
 
   box.innerHTML = `
     <p><strong>Translate this:</strong> ${item.text}</p>
-    <details><summary>Show Answer</summary><p>${item.translation}</p></details>
-    <button id="knewBtn">✅ I knew it</button>
-    <button id="didntBtn">❌ I didn't</button>
+    <details id="answerDetails">
+      <summary>Show Answer</summary>
+      <p>${item.translation}</p>
+      <div id="feedbackButtons" style="margin-top: 10px; display: none;">
+        <button id="knewBtn">✅ I knew it</button>
+        <button id="didntBtn">❌ I didn't</button>
+      </div>
+    </details>
   `;
+
+  document.querySelector("#answerDetails").addEventListener("toggle", function () {
+    const btns = document.getElementById("feedbackButtons");
+    if (this.open) btns.style.display = "block";
+  });
 
   document.getElementById("knewBtn").onclick = () => {
     scheduleReview(item, true);
