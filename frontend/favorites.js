@@ -18,7 +18,7 @@ export function addFavorite({ text, translation }) {
     translation,
     addedAt: new Date().toISOString(),
     reviewed: 0,
-    nextReview: null,
+    nextReview: new Date().toISOString(),
   });
   saveFavorites(favorites);
 }
@@ -47,6 +47,6 @@ export function renderFavorites() {
     li.innerHTML = `📌 <strong>${item.text}</strong> → ${item.translation}
       <button onclick="removeFavoriteAndRender('${item.id}')">❌</button>`;
     list.appendChild(li);
-    updatePracticeButton();
   });
+  updatePracticeButton();
 }

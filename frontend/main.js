@@ -110,7 +110,7 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   const dueItems = getDueItems();
   const box = document.getElementById("practiceArea");
   if (dueItems.length === 0) {
-    box.textContent = `
+    box.innerHTML = `
       <p>🎉 Well done! You practiced all words.</p>
       <button id="restartBtn">🔁 Restart Practice</button>
     `;
@@ -146,10 +146,12 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   document.getElementById("knewBtn").onclick = () => {
     scheduleReview(item, true);
     box.innerHTML = "<p>✅ Great! It will show up less frequently.</p>";
+    setTimeout(() => document.getElementById("nextPracticeBtn").click(), 1000);
   };
   document.getElementById("didntBtn").onclick = () => {
     scheduleReview(item, false);
     box.innerHTML = "<p>❌ No problem! We'll repeat it sooner.</p>";
+    setTimeout(() => document.getElementById("nextPracticeBtn").click(), 1000);
   };
 });
 
