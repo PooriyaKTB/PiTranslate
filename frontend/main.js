@@ -1,61 +1,30 @@
-function updateFavoritesUI() {
-  const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-  const list = document.getElementById("favoritesList");
-  list.innerHTML = "";
-  favorites.forEach((item) => {
-    const li = document.createElement("li");
-    li.textContent = `📌 ${item.text} → ${item.translation}`;
-    list.appendChild(li);
-  });
-}
+import { addFavorite, renderFavorites, removeFavorite } from "./favorites.js";
+import { getDueItems, scheduleReview } from "./practice.js";
 
-function getNextPractice() {
-  const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-  if (favorites.length === 0) {
-    return null;
-  }
-  const index = Math.floor(Math.random() * favorites.length);
-  return favorites[index];
-}
+const API_BASE = "https://pooriya-pitranslate.hosting.codeyourfuture.io/api";
 
-document.getElementById("nextPracticeBtn").addEventListener("click", () => {
-  const practice = getNextPractice();
-  const box = document.getElementById("practiceArea");
-  if (!practice) {
-    box.textContent = "No favorites to practice.";
-    return;
-  }
-  box.innerHTML = `
-    <p><strong>Translate this:</strong> ${practice.text}</p>
-    <details>
-      <summary>Show Answer</summary>
-      <p>${practice.translation}</p>
-    </details>
-  `;
-});
+window.removeFavoriteAndRender = (id) => {
+  removeFavorite(id);
+  renderFavorites();
+};
 
 document.getElementById("translateBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
   const targetLang = document.getElementById("targetLang").value;
 
   if (!inputText.trim()) {
-    document.getElementById("output").innerText =
-      "Please enter text to translate.";
+    document.getElementById("output").innerText = "Please enter text to translate.";
     return;
   }
 
-  const res = await fetch(
-    "https://pooriya-pitranslate.hosting.codeyourfuture.io/api/translate",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ inputText, targetLang }),
-    }
-  );
+  const res = await fetch(`${API_BASE}/translate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ inputText, targetLang }),
+  });
 
   const data = await res.json();
-  document.getElementById("output").textContent =
-    data.translation || "Translation failed";
+  document.getElementById("output").textContent = data.translation || "Translation failed";
 });
 
 document.getElementById("speakBtn").addEventListener("click", () => {
@@ -65,101 +34,88 @@ document.getElementById("speakBtn").addEventListener("click", () => {
   speechSynthesis.speak(utterance);
 });
 
-document.getElementById("inputText").addEventListener("mouseup", async () => {
-  const textarea = document.getElementById("inputText");
-  const selectedText = textarea.value
-    .substring(textarea.selectionStart, textarea.selectionEnd)
-    .trim();
-  const targetLang = document.getElementById("targetLang").value;
-
-  if (selectedText.length > 0) {
-    const res = await fetch(
-      "https://pooriya-pitranslate.hosting.codeyourfuture.io/api/translate",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inputText: selectedText, targetLang }),
-      }
-    );
-
-    const data = await res.json();
-    document.getElementById(
-      "highlightTranslation"
-    ).textContent = `🔎 "${selectedText}" → ${data.translation}`;
-  } else {
-    document.getElementById("highlightTranslation").textContent = "";
-  }
-});
-
 document.getElementById("detailsBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
-  const inputLang = document.getElementById("inputLang").value;
   const targetLang = document.getElementById("targetLang").value;
 
   if (!inputText.trim()) {
-    document.getElementById("extraDetails").innerHTML = `
-      <p style="color: red;"Please enter a word or phrase first!/p>
-    `;
+    document.getElementById("extraDetails").innerHTML = "<p style='color: red;'>Please enter a word or phrase first!</p>";
     return;
   }
 
-  const res = await fetch(
-    "https://pooriya-pitranslate.hosting.codeyourfuture.io/api/details",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ inputText, inputLang, targetLang }),
-    }
-  );
+  const res = await fetch(`${API_BASE}/details`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ inputText, targetLang }),
+  });
+
   const data = await res.json();
 
-  const examplesText = data.examples
-    .map((ex) => `${ex.text} → ${ex.translation}`)
-    .join("<br>");
-
-  const synonymsText = data.synonyms
-    .map((s) => `${s.word} → ${s.translation}`)
-    .join("<br>");
+  const examplesText = data.examples.map((ex) => `${ex.text} → ${ex.translation}`).join("<br>");
+  const synonymsText = data.synonyms.map((s) => `${s.word} → ${s.translation}`).join("<br>");
 
   document.getElementById("extraDetails").innerHTML = `
-    <h4>Examples:</h4>
-    <p>${examplesText}</p>
-    <h4>Synonyms:</h4>
-    <p>${synonymsText}</p>
+    <h4>Examples:</h4><p>${examplesText}</p>
+    <h4>Synonyms:</h4><p>${synonymsText}</p>
   `;
 });
 
 document.getElementById("idiomBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
+  const targetLang = document.getElementById("targetLang").value;
+
   if (!inputText.trim()) {
-    document.getElementById("idiomOutput").innerHTML =
-      "<p style= color: red; Please enter a word or phrase first!</p>";
+    document.getElementById("idiomOutput").innerHTML = "<p style='color: red;'>Please enter a word or phrase first.</p>";
     return;
   }
 
-  const res = await fetch(
-    "https://pooriya-pitranslate.hosting.codeyourfuture.io/api/idiom",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ inputText }),
-    }
-  );
+  const res = await fetch(`${API_BASE}/idiom`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ inputText, targetLang }),
+  });
+
   const data = await res.json();
-  document.getElementById(
-    "idiomOutput"
-  ).innerHTML = `<h4>Related Idiom:</h4><p>${data.idiom}</p>`;
+
+  document.getElementById("idiomOutput").innerHTML = `
+    <h4>📌 Idiom:</h4><p>${data.idiom}</p>
+    <h4>💬 Meaning:</h4><p>${data.meaning}</p>
+    <h4>🌍 Equivalent in ${targetLang}:</h4><p>${data.equivalent}</p>
+  `;
 });
 
 document.getElementById("favBtn").addEventListener("click", () => {
   const inputText = document.getElementById("inputText").value;
   const translation = document.getElementById("output").textContent;
   if (!inputText || !translation) return;
+  addFavorite({ text: inputText, translation });
+  renderFavorites();
+});
 
-  const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-  favorites.push({ text: inputText, translation });
-  localStorage.setItem("favorites", JSON.stringify(favorites));
-  updateFavoritesUI();
+document.getElementById("nextPracticeBtn").addEventListener("click", () => {
+  const dueItems = getDueItems();
+  const box = document.getElementById("practiceArea");
+  if (dueItems.length === 0) {
+    box.textContent = "No favorites ready to practice.";
+    return;
+  }
+
+  const item = dueItems[Math.floor(Math.random() * dueItems.length)];
+  box.innerHTML = `
+    <p><strong>Translate this:</strong> ${item.text}</p>
+    <details><summary>Show Answer</summary><p>${item.translation}</p></details>
+    <button id="knewBtn">✅ I knew it</button>
+    <button id="didntBtn">❌ I didn't</button>
+  `;
+
+  document.getElementById("knewBtn").onclick = () => {
+    scheduleReview(item, true);
+    box.innerHTML = "<p>✅ Great! It will show up less frequently.</p>";
+  };
+  document.getElementById("didntBtn").onclick = () => {
+    scheduleReview(item, false);
+    box.innerHTML = "<p>❌ No problem! We'll repeat it sooner.</p>";
+  };
 });
 
 document.getElementById("themeToggle").addEventListener("click", () => {
@@ -173,6 +129,5 @@ document.getElementById("themeToggle").addEventListener("click", () => {
 window.addEventListener("DOMContentLoaded", () => {
   const savedTheme = localStorage.getItem("theme") || "light";
   document.documentElement.setAttribute("data-theme", savedTheme);
+  renderFavorites();
 });
-
-updateFavoritesUI();
