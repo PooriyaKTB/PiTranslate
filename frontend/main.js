@@ -10,14 +10,28 @@ const API_BASE = "https://pooriya-pitranslate.hosting.codeyourfuture.io/api";
 window.removeFavoriteAndRender = (id) => {
   removeFavorite(id);
   renderFavorites();
-  const currentQueue = JSON.parse(localStorage.getItem("practiceQueue")) || [];
-  const updatedIndex = parseInt(localStorage.getItem("practiceIndex")) || 0;
-  if (updatedIndex >= updatedQueue.length) {
-    localStorage.setItem("practiceIndex", "0");
-  }
-  localStorage.setItem("practiceQueue", JSON.stringify(updatedQueue));
-  updatePracticeButton();
+  buildPracticeQueue();
 };
+
+function buildPracticeQueue() {
+  const dueItems = getDueItems().sort(
+    (a, b) => new Date(a.nextReview || 0) - new Date(b.nextReview || 0)
+  );
+  localStorage.setItem("practiceQueue", JSON.stringify(dueItems));
+  localStorage.setItem("practiceIndex", "0");
+  updatePracticeButton();
+  return dueItems;
+}
+
+function resetPractice() {
+  localStorage.removeItem("practiceStarted");
+  localStorage.removeItem("practiceIndex");
+  localStorage.removeItem("practiceQueue");
+  document.getElementById("practiceArea").innerHTML = "";
+  updatePracticeButton();
+  buildPracticeQueue();
+  document.getElementById("nextPracticeBtn").textContent = "Start Practice";
+}
 
 document.getElementById("translateBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
@@ -114,31 +128,15 @@ document.getElementById("favBtn").addEventListener("click", () => {
   if (!inputText || !translation) return;
   addFavorite({ text: inputText, translation });
   renderFavorites();
-  updatePracticeButton();
+  buildPracticeQueue();
 });
-
-function buildPracticeQueue() {
-  // const practiceQueue = JSON.parse(localStorage.getItem("practiceQueue")) || [];
-  // let practiceIndex = parseInt(localStorage.getItem("practiceIndex")) || 0;
-  const dueItems = getDueItems().sort(
-    (a, b) => new Date(a.nextReview || 0) - new Date(b.nextReview || 0)
-  );
-  localStorage.setItem("practiceQueue", JSON.stringify(dueItems));
-  localStorage.setItem("practiceIndex", "0");
-  updatePracticeButton();
-  return dueItems;
-}
-
-let practiceIndex = 0;
-let practiceQueue = [];
 
 document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   if (!localStorage.getItem("practiceStarted")) {
     localStorage.setItem("practiceStarted", "true");
-    updatePracticeButton();
-    practiceIndex = 0;
     practiceQueue = buildPracticeQueue();
-    localStorage.setItem("practiceIndex", 0);
+    practiceIndex = 0;
+    localStorage.setItem("practiceIndex", "0");
   } else {
     practiceQueue = JSON.parse(localStorage.getItem("practiceQueue")) || [];
     practiceIndex = parseInt(localStorage.getItem("practiceIndex")) || 0;
@@ -146,29 +144,17 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
 
   const box = document.getElementById("practiceArea");
 
+  if (practiceQueue.length === 0) {
+    box.innerHTML = `<p>No words due for practice.</p>`;
+    return;
+  }
+
   if (practiceIndex >= practiceQueue.length) {
     box.innerHTML = `
       <p>🎉 Well done! You practiced all words.</p>
       <button id="restartBtn">🔁 Restart Practice</button>
     `;
-    document.getElementById("restartBtn").onclick = () => {
-      localStorage.removeItem("practiceStarted");
-      localStorage.removeItem("practiceIndex");
-      localStorage.removeItem("practiceQueue");
-      updatePracticeButton();
-      document.getElementById("practiceArea").innerHTML = "";
-      setTimeout(() => {
-        localStorage.setItem("practiceStarted", "true");
-        document.getElementById("nextPracticeBtn").click();
-      }, 200);
-
-      localStorage.removeItem("practiceStarted");
-      localStorage.removeItem("practiceIndex");
-      localStorage.removeItem("practiceQueue");
-      updatePracticeButton();
-      document.getElementById("practiceArea").innerHTML = "";
-      setTimeout(() => document.getElementById("nextPracticeBtn").click(), 100);
-    };
+    document.getElementById("restartBtn").onclick = resetPractice;
     return;
   }
 
@@ -196,14 +182,16 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   document.getElementById("knewBtn").onclick = () => {
     scheduleReview(item, true);
     practiceIndex++;
-    localStorage.setItem("practiceIndex", 0);
+    localStorage.setItem("practiceIndex", practiceIndex);
+    buildPracticeQueue();
     setTimeout(() => document.getElementById("nextPracticeBtn").click(), 500);
   };
 
   document.getElementById("didntBtn").onclick = () => {
     scheduleReview(item, false);
     practiceIndex++;
-    localStorage.setItem("practiceIndex", 0);
+    localStorage.setItem("practiceIndex", practiceIndex);
+    buildPracticeQueue();
     setTimeout(() => document.getElementById("nextPracticeBtn").click(), 500);
   };
 });
@@ -222,41 +210,3 @@ window.addEventListener("DOMContentLoaded", () => {
   renderFavorites();
   updatePracticeButton();
 });
-
-const modal = document.getElementById("clearModal");
-const confirmBtn = document.getElementById("confirmClearBtn");
-const cancelBtn = document.getElementById("cancelClearBtn");
-const checkbox = document.getElementById("skipConfirmCheckbox");
-
-document.getElementById("clearFavoritesBtn").addEventListener("click", () => {
-  if (localStorage.getItem("skipDeleteConfirm") === "true") {
-    clearFavoritesNow();
-    modal.classList.add("hidden");
-  } else {
-    modal.classList.remove("hidden");
-  }
-});
-
-confirmBtn.addEventListener("click", () => {
-  if (checkbox.checked) {
-    localStorage.setItem("skipDeleteConfirm", "true");
-  }
-  clearFavoritesNow();
-  modal.classList.add("hidden");
-});
-
-cancelBtn.addEventListener("click", () => {
-  modal.classList.add("hidden");
-});
-
-function clearFavoritesNow() {
-  localStorage.removeItem("favorites");
-  localStorage.removeItem("practiceIndex");
-  localStorage.removeItem("practiceStarted");
-  localStorage.removeItem("practiceQueue");
-  renderFavorites();
-  document.getElementById("practiceArea").innerHTML = "";
-  updatePracticeButton();
-  document.getElementById("clearModal").style.display = "none";
-  document.getElementById("nextPracticeBtn").textContent = "Start Practice";
-}

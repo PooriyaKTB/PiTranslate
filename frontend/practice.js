@@ -13,6 +13,13 @@ export function updatePracticeButton() {
   const queue = JSON.parse(localStorage.getItem("practiceQueue") || "[]");
 
   if (!queue.length) {
+    const fallback = getDueItems();
+    if (fallback.length > 0) {
+      localStorage.setItem("practiceQueue", JSON.stringify(fallback));
+      btn.style.display = "inline-block";
+      btn.textContent = "▶️ Start Practice";
+      return;
+    }
     btn.style.display = "none";
     return;
   }
