@@ -9,7 +9,6 @@ export function getDueItems() {
 
 export function updatePracticeButton() {
   const btn = document.getElementById("nextPracticeBtn");
-  const started = localStorage.getItem("practiceStarted");
   const queue = JSON.parse(localStorage.getItem("practiceQueue") || "[]");
 
   if (!queue.length) {
@@ -28,25 +27,6 @@ export function updatePracticeButton() {
   const index = parseInt(localStorage.getItem("practiceIndex")) || 0;
   btn.textContent = index === 0 ? "▶️ Start Practice" : "Next Word";
 }
-
-/* function updatePracticeButton() {
-  const btn = document.getElementById("nextPracticeBtn");
-  if (!btn) return;
-
-  const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-  const dueItems = favorites.filter((item) => {
-    return !item.nextReview || new Date(item.nextReview).getTime() <= Date.now();
-  });
-  
-  const started = localStorage.getItem("practiceStarted") === "true";
-
-  if (dueItems.length < 1) {
-    btn.style.display = "none";
-  } else {
-    btn.style.display = "inline-block";
-    btn.textContent = started ? "➡️ Next Word" : "▶️ Start Practice";
-  }
-} */
 
 export function scheduleReview(item, knewIt) {
   const favorites = loadFavorites();
