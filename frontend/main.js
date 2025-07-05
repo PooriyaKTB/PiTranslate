@@ -1,5 +1,9 @@
 import { addFavorite, renderFavorites, removeFavorite } from "./favorites.js";
-import { getDueItems, scheduleReview, updatePracticeButton } from "./practice.js";
+import {
+  getDueItems,
+  scheduleReview,
+  updatePracticeButton,
+} from "./practice.js";
 
 const API_BASE = "https://pooriya-pitranslate.hosting.codeyourfuture.io/api";
 
@@ -7,8 +11,12 @@ window.removeFavoriteAndRender = (id) => {
   removeFavorite(id);
   renderFavorites();
   const currentQueue = JSON.parse(localStorage.getItem("practiceQueue")) || [];
-  const updatedQueue = currentQueue.filter((item) => item.id !== id);
+  const updatedIndex = parseInt(localStorage.getItem("practiceIndex")) || 0;
+  if (updatedIndex >= updatedQueue.length) {
+    localStorage.setItem("practiceIndex", "0");
+  }
   localStorage.setItem("practiceQueue", JSON.stringify(updatedQueue));
+  updatePracticeButton();
 };
 
 document.getElementById("translateBtn").addEventListener("click", async () => {
@@ -109,21 +117,28 @@ document.getElementById("favBtn").addEventListener("click", () => {
   updatePracticeButton();
 });
 
-let practiceQueue = JSON.parse(localStorage.getItem("practiceQueue")) || [];
-let practiceIndex = parseInt(localStorage.getItem("practiceIndex")) || 0;
-
 function buildPracticeQueue() {
-  const dueItems = getDueItems().sort((a, b) => new Date(a.nextReview || 0) - new Date(b.nextReview || 0));
+  // const practiceQueue = JSON.parse(localStorage.getItem("practiceQueue")) || [];
+  // let practiceIndex = parseInt(localStorage.getItem("practiceIndex")) || 0;
+  const dueItems = getDueItems().sort(
+    (a, b) => new Date(a.nextReview || 0) - new Date(b.nextReview || 0)
+  );
   localStorage.setItem("practiceQueue", JSON.stringify(dueItems));
+  localStorage.setItem("practiceIndex", "0");
+  updatePracticeButton();
   return dueItems;
 }
+
+let practiceIndex = 0;
+let practiceQueue = [];
 
 document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   if (!localStorage.getItem("practiceStarted")) {
     localStorage.setItem("practiceStarted", "true");
+    updatePracticeButton();
     practiceIndex = 0;
     practiceQueue = buildPracticeQueue();
-    localStorage.setItem("practiceIndex", practiceIndex);
+    localStorage.setItem("practiceIndex", 0);
   } else {
     practiceQueue = JSON.parse(localStorage.getItem("practiceQueue")) || [];
     practiceIndex = parseInt(localStorage.getItem("practiceIndex")) || 0;
@@ -142,7 +157,17 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
       localStorage.removeItem("practiceQueue");
       updatePracticeButton();
       document.getElementById("practiceArea").innerHTML = "";
-      document.getElementById("nextPracticeBtn").click();
+      setTimeout(() => {
+        localStorage.setItem("practiceStarted", "true");
+        document.getElementById("nextPracticeBtn").click();
+      }, 200);
+
+      localStorage.removeItem("practiceStarted");
+      localStorage.removeItem("practiceIndex");
+      localStorage.removeItem("practiceQueue");
+      updatePracticeButton();
+      document.getElementById("practiceArea").innerHTML = "";
+      setTimeout(() => document.getElementById("nextPracticeBtn").click(), 100);
     };
     return;
   }
@@ -161,45 +186,27 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
     </details>
   `;
 
-  document.querySelector("#answerDetails").addEventListener("toggle", function () {
-    const btns = document.getElementById("feedbackButtons");
-    if (this.open) btns.style.display = "block";
-  });
+  document
+    .querySelector("#answerDetails")
+    .addEventListener("toggle", function () {
+      const btns = document.getElementById("feedbackButtons");
+      if (this.open) btns.style.display = "block";
+    });
 
   document.getElementById("knewBtn").onclick = () => {
     scheduleReview(item, true);
     practiceIndex++;
-    localStorage.setItem("practiceIndex", practiceIndex);
+    localStorage.setItem("practiceIndex", 0);
     setTimeout(() => document.getElementById("nextPracticeBtn").click(), 500);
   };
 
   document.getElementById("didntBtn").onclick = () => {
     scheduleReview(item, false);
     practiceIndex++;
-    localStorage.setItem("practiceIndex", practiceIndex);
+    localStorage.setItem("practiceIndex", 0);
     setTimeout(() => document.getElementById("nextPracticeBtn").click(), 500);
   };
 });
-
-
-function updatePracticeButton() {
-  const btn = document.getElementById("nextPracticeBtn");
-  if (!btn) return;
-
-  const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-  const dueItems = favorites.filter((item) => {
-    return !item.nextReview || new Date(item.nextReview).getTime() <= Date.now();
-  });
-  
-  const started = localStorage.getItem("practiceStarted") === "true";
-
-  if (dueItems.length < 1) {
-    btn.style.display = "none";
-  } else {
-    btn.style.display = "inline-block";
-    btn.textContent = started ? "➡️ Next Word" : "▶️ Start Practice";
-  }
-}
 
 document.getElementById("themeToggle").addEventListener("click", () => {
   const html = document.documentElement;
@@ -248,7 +255,8 @@ function clearFavoritesNow() {
   localStorage.removeItem("practiceStarted");
   localStorage.removeItem("practiceQueue");
   renderFavorites();
-  updatePracticeButton();
   document.getElementById("practiceArea").innerHTML = "";
-  document.getElementById("confirmModal").style.display = "none";
+  updatePracticeButton();
+  document.getElementById("clearModal").style.display = "none";
+  document.getElementById("nextPracticeBtn").textContent = "Start Practice";
 }
