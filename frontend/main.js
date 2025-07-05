@@ -32,7 +32,6 @@ function resetPractice() {
   localStorage.removeItem("practiceIndex");
   localStorage.removeItem("practiceQueue");
   document.getElementById("practiceArea").innerHTML = "";
-  updatePracticeButton();
   buildPracticeQueue();
   updatePracticeButton();
   document.getElementById("nextPracticeBtn").textContent = "Start Practice";
@@ -142,7 +141,7 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   if (!localStorage.getItem("practiceStarted")) {
     localStorage.setItem("practiceStarted", "true");
     practiceQueue = buildPracticeQueue();
-  updatePracticeButton();
+    updatePracticeButton();
     practiceIndex = 0;
     localStorage.setItem("practiceIndex", "0");
   } else {
@@ -167,7 +166,6 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
     `;
     document.getElementById("restartBtn").onclick = () => {
       resetPractice();
-      updatePracticeButton();
       setTimeout(() => document.getElementById("nextPracticeBtn").click(), 100);
     };
     return;
@@ -196,15 +194,11 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
 
   document.getElementById("knewBtn").onclick = () => {
     scheduleReview(item, true);
-    practiceIndex++;
-    localStorage.setItem("practiceIndex", practiceIndex);
     setTimeout(() => document.getElementById("nextPracticeBtn").click(), 500);
   };
 
   document.getElementById("didntBtn").onclick = () => {
     scheduleReview(item, false);
-    practiceIndex++;
-    localStorage.setItem("practiceIndex", practiceIndex);
     setTimeout(() => document.getElementById("nextPracticeBtn").click(), 500);
   };
 });
