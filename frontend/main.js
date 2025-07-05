@@ -28,6 +28,13 @@ function buildPracticeQueue() {
 }
 
 function resetPractice() {
+  const favorites = loadFavorites();
+  favorites.forEach(f => {
+    f.reviewed = 0;
+    f.nextReview = new Date(Date.now() - 1000).toISOString();
+  });
+  saveFavorites(favorites);
+
   localStorage.removeItem("practiceStarted");
   localStorage.removeItem("practiceIndex");
   localStorage.removeItem("practiceQueue");
