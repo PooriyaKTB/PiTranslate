@@ -7,6 +7,9 @@ import {
 
 const API_BASE = "https://pooriya-pitranslate.hosting.codeyourfuture.io/api";
 
+let practiceQueue = [];
+let practiceIndex = 0;
+
 window.removeFavoriteAndRender = (id) => {
   removeFavorite(id);
   renderFavorites();
