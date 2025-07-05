@@ -1,4 +1,10 @@
-import { addFavorite, renderFavorites, removeFavorite } from "./favorites.js";
+import {
+  addFavorite,
+  renderFavorites,
+  removeFavorite,
+  saveFavorites,
+  loadFavorites,
+} from "./favorites.js";
 import {
   getDueItems,
   scheduleReview,
@@ -29,7 +35,7 @@ function buildPracticeQueue() {
 
 function resetPractice() {
   const favorites = loadFavorites();
-  favorites.forEach(f => {
+  favorites.forEach((f) => {
     f.reviewed = 0;
     f.nextReview = new Date(Date.now() - 1000).toISOString();
   });
@@ -39,7 +45,7 @@ function resetPractice() {
   localStorage.removeItem("practiceIndex");
   localStorage.removeItem("practiceQueue");
   document.getElementById("practiceArea").innerHTML = "";
-  buildPracticeQueue();
+  practiceQueue = buildPracticeQueue();
   updatePracticeButton();
   document.getElementById("nextPracticeBtn").textContent = "Start Practice";
   document.getElementById("nextPracticeBtn").style.display = "inline-block";
