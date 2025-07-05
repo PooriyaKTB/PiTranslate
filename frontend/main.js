@@ -167,6 +167,7 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
     `;
     document.getElementById("restartBtn").onclick = () => {
       resetPractice();
+      updatePracticeButton();
       setTimeout(() => document.getElementById("nextPracticeBtn").click(), 100);
     };
     return;
