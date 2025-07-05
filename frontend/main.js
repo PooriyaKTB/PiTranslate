@@ -106,27 +106,32 @@ document.getElementById("favBtn").addEventListener("click", () => {
   updatePracticeButton();
 });
 
+let practiceIndex = parseInt(localStorage.getItem("practiceIndex")) || 0;
+
 document.getElementById("nextPracticeBtn").addEventListener("click", () => {
-  const dueItems = getDueItems();
-  localStorage.setItem("practiceStarted", "true");
+  const dueItems = getDueItems().sort((a, b) => new Date(a.nextReview || 0) - new Date(b.nextReview || 0));
   const box = document.getElementById("practiceArea");
-  if (dueItems.length === 0) {
+
+  if (!localStorage.getItem("practiceStarted")) {
+    localStorage.setItem("practiceStarted", "true");
+    practiceIndex = 0;
+  }
+
+  if (practiceIndex >= dueItems.length) {
     box.innerHTML = `
       <p>🎉 Well done! You practiced all words.</p>
       <button id="restartBtn">🔁 Restart Practice</button>
     `;
     document.getElementById("restartBtn").onclick = () => {
       localStorage.removeItem("practiceStarted");
+      localStorage.removeItem("practiceIndex");
       updatePracticeButton();
       document.getElementById("nextPracticeBtn").click();
     };
-  return;
+    return;
   }
 
-  const sorted = dueItems.sort(
-    (a, b) => new Date(a.nextReview || 0) - new Date(b.nextReview || 0)
-  );
-  const item = sorted[0];
+  const item = dueItems[practiceIndex];
 
   box.innerHTML = `
     <p><strong>Translate this:</strong> ${item.text}</p>
@@ -147,15 +152,16 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
 
   document.getElementById("knewBtn").onclick = () => {
     scheduleReview(item, true);
-    box.innerHTML = "<p>✅ Great! It will show up less frequently.</p>";
-    setTimeout(() => document.getElementById("nextPracticeBtn").click(), 1000);
+    localStorage.setItem("practiceIndex", ++practiceIndex);
+    setTimeout(() => document.getElementById("nextPracticeBtn").click(), 500);
   };
   document.getElementById("didntBtn").onclick = () => {
     scheduleReview(item, false);
-    box.innerHTML = "<p>❌ No problem! We'll repeat it sooner.</p>";
-    setTimeout(() => document.getElementById("nextPracticeBtn").click(), 1000);
+    localStorage.setItem("practiceIndex", ++practiceIndex);
+    setTimeout(() => document.getElementById("nextPracticeBtn").click(), 500);
   };
 });
+
 
 function updatePracticeButton() {
   const btn = document.getElementById("nextPracticeBtn");
@@ -223,4 +229,5 @@ function clearFavoritesNow() {
   renderFavorites();
   updatePracticeButton();
   document.getElementById("practiceArea").innerHTML = "";
+  document.getElementById("confirmModal").style.display = "none";
 }
