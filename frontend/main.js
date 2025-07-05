@@ -143,6 +143,8 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   } else {
     practiceQueue = JSON.parse(localStorage.getItem("practiceQueue")) || [];
     practiceIndex = parseInt(localStorage.getItem("practiceIndex")) || 0;
+    practiceIndex++;
+    localStorage.setItem("practiceIndex", practiceIndex);
   }
 
   const box = document.getElementById("practiceArea");
@@ -189,7 +191,6 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
     scheduleReview(item, true);
     practiceIndex++;
     localStorage.setItem("practiceIndex", practiceIndex);
-    buildPracticeQueue();
     setTimeout(() => document.getElementById("nextPracticeBtn").click(), 500);
   };
 
@@ -197,7 +198,6 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
     scheduleReview(item, false);
     practiceIndex++;
     localStorage.setItem("practiceIndex", practiceIndex);
-    buildPracticeQueue();
     setTimeout(() => document.getElementById("nextPracticeBtn").click(), 500);
   };
 });
