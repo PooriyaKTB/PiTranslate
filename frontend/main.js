@@ -1,11 +1,14 @@
 import { addFavorite, renderFavorites, removeFavorite } from "./favorites.js";
-import { getDueItems, scheduleReview } from "./practice.js";
+import { getDueItems, scheduleReview, updatePracticeButton } from "./practice.js";
 
 const API_BASE = "https://pooriya-pitranslate.hosting.codeyourfuture.io/api";
 
 window.removeFavoriteAndRender = (id) => {
   removeFavorite(id);
   renderFavorites();
+  const currentQueue = JSON.parse(localStorage.getItem("practiceQueue")) || [];
+  const updatedQueue = currentQueue.filter((item) => item.id !== id);
+  localStorage.setItem("practiceQueue", JSON.stringify(updatedQueue));
 };
 
 document.getElementById("translateBtn").addEventListener("click", async () => {
@@ -106,18 +109,29 @@ document.getElementById("favBtn").addEventListener("click", () => {
   updatePracticeButton();
 });
 
+let practiceQueue = JSON.parse(localStorage.getItem("practiceQueue")) || [];
 let practiceIndex = parseInt(localStorage.getItem("practiceIndex")) || 0;
 
-document.getElementById("nextPracticeBtn").addEventListener("click", () => {
+function buildPracticeQueue() {
   const dueItems = getDueItems().sort((a, b) => new Date(a.nextReview || 0) - new Date(b.nextReview || 0));
-  const box = document.getElementById("practiceArea");
+  localStorage.setItem("practiceQueue", JSON.stringify(dueItems));
+  return dueItems;
+}
 
+document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   if (!localStorage.getItem("practiceStarted")) {
     localStorage.setItem("practiceStarted", "true");
     practiceIndex = 0;
+    practiceQueue = buildPracticeQueue();
+    localStorage.setItem("practiceIndex", practiceIndex);
+  } else {
+    practiceQueue = JSON.parse(localStorage.getItem("practiceQueue")) || [];
+    practiceIndex = parseInt(localStorage.getItem("practiceIndex")) || 0;
   }
 
-  if (practiceIndex >= dueItems.length) {
+  const box = document.getElementById("practiceArea");
+
+  if (practiceIndex >= practiceQueue.length) {
     box.innerHTML = `
       <p>🎉 Well done! You practiced all words.</p>
       <button id="restartBtn">🔁 Restart Practice</button>
@@ -125,13 +139,15 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
     document.getElementById("restartBtn").onclick = () => {
       localStorage.removeItem("practiceStarted");
       localStorage.removeItem("practiceIndex");
+      localStorage.removeItem("practiceQueue");
       updatePracticeButton();
+      document.getElementById("practiceArea").innerHTML = "";
       document.getElementById("nextPracticeBtn").click();
     };
     return;
   }
 
-  const item = dueItems[practiceIndex];
+  const item = practiceQueue[practiceIndex];
 
   box.innerHTML = `
     <p><strong>Translate this:</strong> ${item.text}</p>
@@ -152,12 +168,15 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
 
   document.getElementById("knewBtn").onclick = () => {
     scheduleReview(item, true);
-    localStorage.setItem("practiceIndex", ++practiceIndex);
+    practiceIndex++;
+    localStorage.setItem("practiceIndex", practiceIndex);
     setTimeout(() => document.getElementById("nextPracticeBtn").click(), 500);
   };
+
   document.getElementById("didntBtn").onclick = () => {
     scheduleReview(item, false);
-    localStorage.setItem("practiceIndex", ++practiceIndex);
+    practiceIndex++;
+    localStorage.setItem("practiceIndex", practiceIndex);
     setTimeout(() => document.getElementById("nextPracticeBtn").click(), 500);
   };
 });
@@ -205,6 +224,7 @@ const checkbox = document.getElementById("skipConfirmCheckbox");
 document.getElementById("clearFavoritesBtn").addEventListener("click", () => {
   if (localStorage.getItem("skipDeleteConfirm") === "true") {
     clearFavoritesNow();
+    modal.classList.add("hidden");
   } else {
     modal.classList.remove("hidden");
   }
@@ -226,6 +246,7 @@ function clearFavoritesNow() {
   localStorage.removeItem("favorites");
   localStorage.removeItem("practiceIndex");
   localStorage.removeItem("practiceStarted");
+  localStorage.removeItem("practiceQueue");
   renderFavorites();
   updatePracticeButton();
   document.getElementById("practiceArea").innerHTML = "";

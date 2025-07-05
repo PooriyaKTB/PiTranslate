@@ -7,6 +7,21 @@ export function getDueItems() {
   });
 }
 
+export function updatePracticeButton() {
+  const btn = document.getElementById("nextPracticeBtn");
+  const started = localStorage.getItem("practiceStarted");
+  const queue = JSON.parse(localStorage.getItem("practiceQueue") || "[]");
+  
+  if (!queue.length) {
+    btn.style.display = "none";
+    return;
+  }
+
+  btn.style.display = "inline-block";
+  btn.textContent = started ? "Next Word" : "Start Practice";
+}
+
+
 export function scheduleReview(item, knewIt) {
   const favorites = loadFavorites();
   const index = favorites.findIndex(f => f.id === item.id);

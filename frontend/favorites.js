@@ -1,3 +1,5 @@
+import { updatePracticeButton } from "./practice.js";
+
 export function loadFavorites() {
   return JSON.parse(localStorage.getItem("favorites")) || [];
 }
@@ -18,7 +20,7 @@ export function addFavorite({ text, translation }) {
     translation,
     addedAt: new Date().toISOString(),
     reviewed: 0,
-    nextReview: new Date().toISOString(),
+    nextReview: new Date(Date.now() - 1000).toISOString(),
   });
   saveFavorites(favorites);
 }
