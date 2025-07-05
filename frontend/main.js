@@ -157,7 +157,10 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
       <p>🎉 Well done! You practiced all words.</p>
       <button id="restartBtn">🔁 Restart Practice</button>
     `;
-    document.getElementById("restartBtn").onclick = resetPractice;
+    document.getElementById("restartBtn").onclick = () => {
+      resetPractice();
+      setTimeout(() => document.getElementById("nextPracticeBtn").click(), 100);
+    };
     return;
   }
 
@@ -205,6 +208,42 @@ document.getElementById("themeToggle").addEventListener("click", () => {
   const next = current === "dark" ? "light" : "dark";
   html.setAttribute("data-theme", next);
   localStorage.setItem("theme", next);
+});
+
+const modal = document.getElementById("clearModal");
+const confirmBtn = document.getElementById("confirmClearBtn");
+const cancelBtn = document.getElementById("cancelClearBtn");
+const checkbox = document.getElementById("skipConfirmCheckbox");
+
+function clearFavoritesNow() {
+  localStorage.removeItem("favorites");
+  localStorage.removeItem("practiceIndex");
+  localStorage.removeItem("practiceStarted");
+  localStorage.removeItem("practiceQueue");
+  renderFavorites();
+  document.getElementById("practiceArea").innerHTML = "";
+  updatePracticeButton();
+  document.getElementById("nextPracticeBtn").textContent = "Start Practice";
+  modal.classList.add("hidden");
+}
+
+document.getElementById("clearFavoritesBtn").addEventListener("click", () => {
+  if (localStorage.getItem("skipDeleteConfirm") === "true") {
+    clearFavoritesNow();
+  } else {
+    modal.classList.remove("hidden");
+  }
+});
+
+confirmBtn?.addEventListener("click", () => {
+  if (checkbox.checked) {
+    localStorage.setItem("skipDeleteConfirm", "true");
+  }
+  clearFavoritesNow();
+});
+
+cancelBtn?.addEventListener("click", () => {
+  modal.classList.add("hidden");
 });
 
 window.addEventListener("DOMContentLoaded", () => {
