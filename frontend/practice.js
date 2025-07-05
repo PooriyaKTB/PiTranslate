@@ -25,7 +25,8 @@ export function updatePracticeButton() {
   }
 
   btn.style.display = "inline-block";
-  btn.textContent = started ? "Next Word" : "Start Practice";
+  const index = parseInt(localStorage.getItem("practiceIndex")) || 0;
+  btn.textContent = index === 0 ? "▶️ Start Practice" : "Next Word";
 }
 
 /* function updatePracticeButton() {

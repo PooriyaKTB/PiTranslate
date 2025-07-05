@@ -14,6 +14,7 @@ window.removeFavoriteAndRender = (id) => {
   removeFavorite(id);
   renderFavorites();
   buildPracticeQueue();
+  updatePracticeButton();
 };
 
 function buildPracticeQueue() {
@@ -33,7 +34,9 @@ function resetPractice() {
   document.getElementById("practiceArea").innerHTML = "";
   updatePracticeButton();
   buildPracticeQueue();
+  updatePracticeButton();
   document.getElementById("nextPracticeBtn").textContent = "Start Practice";
+  document.getElementById("nextPracticeBtn").style.display = "inline-block";
 }
 
 document.getElementById("translateBtn").addEventListener("click", async () => {
@@ -132,12 +135,14 @@ document.getElementById("favBtn").addEventListener("click", () => {
   addFavorite({ text: inputText, translation });
   renderFavorites();
   buildPracticeQueue();
+  updatePracticeButton();
 });
 
 document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   if (!localStorage.getItem("practiceStarted")) {
     localStorage.setItem("practiceStarted", "true");
     practiceQueue = buildPracticeQueue();
+  updatePracticeButton();
     practiceIndex = 0;
     localStorage.setItem("practiceIndex", "0");
   } else {
@@ -155,6 +160,7 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   }
 
   if (practiceIndex >= practiceQueue.length) {
+    document.getElementById("nextPracticeBtn").style.display = "none";
     box.innerHTML = `
       <p>🎉 Well done! You practiced all words.</p>
       <button id="restartBtn">🔁 Restart Practice</button>
@@ -224,6 +230,7 @@ function clearFavoritesNow() {
   document.getElementById("practiceArea").innerHTML = "";
   updatePracticeButton();
   document.getElementById("nextPracticeBtn").textContent = "Start Practice";
+  document.getElementById("nextPracticeBtn").style.display = "inline-block";
   modal.classList.add("hidden");
 }
 
