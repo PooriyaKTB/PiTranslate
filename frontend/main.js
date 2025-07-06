@@ -28,7 +28,7 @@ function buildPracticeQueue() {
     (a, b) => new Date(a.nextReview || 0) - new Date(b.nextReview || 0)
   );
   localStorage.setItem("practiceQueue", JSON.stringify(dueItems));
-  localStorage.setItem("practiceIndex", "0");
+  // localStorage.setItem("practiceIndex", "0");
   updatePracticeButton();
   return dueItems;
 }
@@ -162,19 +162,11 @@ document.getElementById("favBtn").addEventListener("click", () => {
 
 document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   if (!localStorage.getItem("practiceStarted")) {
-  practiceStarted = true;
-  localStorage.setItem("practiceStarted", "true");
-
-  practiceIndex = 0;
-  localStorage.setItem("practiceIndex", "0");
-
-  practiceQueue = buildPracticeQueue();
-  updatePracticeButton();
     localStorage.setItem("practiceStarted", "true");
     practiceIndex = 0;
     localStorage.setItem("practiceIndex", "0");
     practiceQueue = buildPracticeQueue();
-    updatePracticeButton();
+    // updatePracticeButton();
   } else {
     practiceQueue = JSON.parse(localStorage.getItem("practiceQueue")) || [];
     practiceIndex = parseInt(localStorage.getItem("practiceIndex")) || 0;
