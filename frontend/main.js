@@ -166,7 +166,7 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
     practiceIndex = 0;
     localStorage.setItem("practiceIndex", "0");
     practiceQueue = buildPracticeQueue();
-    // updatePracticeButton();
+    updatePracticeButton();
   } else {
     practiceQueue = JSON.parse(localStorage.getItem("practiceQueue")) || [];
     practiceIndex = parseInt(localStorage.getItem("practiceIndex")) || 0;
