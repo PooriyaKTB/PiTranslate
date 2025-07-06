@@ -72,10 +72,20 @@ document.getElementById("translateBtn").addEventListener("click", async () => {
     data.translation || "Translation failed";
 });
 
+let availableVoices = [];
+
+speechSynthesis.onvoiceschanged = () => {
+  availableVoices = speechSynthesis.getVoices();
+};
+
 document.getElementById("speakBtn").addEventListener("click", () => {
   const text = document.getElementById("output").textContent;
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = document.getElementById("targetLang").value;
+
+  const voice = availableVoices.find(v => v.lang === utterance.lang);
+  if (voice) utterance.voice = voice;
+
   speechSynthesis.speak(utterance);
 });
 
