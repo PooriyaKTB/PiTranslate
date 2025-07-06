@@ -83,7 +83,7 @@ document.getElementById("speakBtn").addEventListener("click", () => {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = document.getElementById("targetLang").value;
 
-  const voice = availableVoices.find(v => v.lang === utterance.lang);
+  const voice = availableVoices.find((v) => v.lang === utterance.lang);
   if (voice) utterance.voice = voice;
 
   speechSynthesis.speak(utterance);
@@ -162,10 +162,18 @@ document.getElementById("favBtn").addEventListener("click", () => {
 
 document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   if (!localStorage.getItem("practiceStarted")) {
+  practiceStarted = true;
+  localStorage.setItem("practiceStarted", "true");
+
+  practiceIndex = 0;
+  localStorage.setItem("practiceIndex", "0");
+
+  practiceQueue = buildPracticeQueue();
+  updatePracticeButton();
     localStorage.setItem("practiceStarted", "true");
-    practiceQueue = buildPracticeQueue();
     practiceIndex = 0;
     localStorage.setItem("practiceIndex", "0");
+    practiceQueue = buildPracticeQueue();
     updatePracticeButton();
   } else {
     practiceQueue = JSON.parse(localStorage.getItem("practiceQueue")) || [];
