@@ -115,3 +115,16 @@ button {
 button:active {
   transform: scale(0.97);
 }
+
+.back-btn {
+  margin-top: 1rem;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--text);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.back-btn:hover {
+  background: var(--box);
+}

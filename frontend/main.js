@@ -35,11 +35,11 @@ onAuthStateChanged(auth, (user) => {
     welcomeText.textContent = `👋 Welcome, ${user.displayName || user.email}`;
     logoutBtn.style.display = "inline-block";
     logoutBtn.addEventListener("click", () => {
-      signOut(auth).then(() => window.location.href = "login.html");
+      signOut(auth).then(() => window.location.href = "login-signup.html");
     });
   } else {
     if (authLinks) authLinks.style.display = "block";
-    else window.location.href = "login.html";
+    else window.location.href = "login-signup.html";
   }
 });
 
