@@ -12,7 +12,7 @@ document.getElementById("signupBtn").addEventListener("click", () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
   createUserWithEmailAndPassword(auth, email, password)
-    .then(() => (window.location.href = "index.html"))
+    .then(() => (window.location.href = "app.html"))
     .catch(
       (err) => (document.getElementById("error").textContent = err.message)
     );

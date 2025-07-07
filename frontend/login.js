@@ -15,7 +15,7 @@ document.getElementById("loginBtn").addEventListener("click", () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
   signInWithEmailAndPassword(auth, email, password)
-    .then(() => (window.location.href = "index.html"))
+    .then(() => (window.location.href = "app.html"))
     .catch(
       (err) => (document.getElementById("error").textContent = err.message)
     );
@@ -23,7 +23,7 @@ document.getElementById("loginBtn").addEventListener("click", () => {
 
 document.getElementById("googleBtn").addEventListener("click", () => {
   signInWithPopup(auth, provider)
-    .then(() => (window.location.href = "index.html"))
+    .then(() => (window.location.href = "app.html"))
     .catch(
       (err) => (document.getElementById("error").textContent = err.message)
     );
