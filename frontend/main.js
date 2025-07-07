@@ -13,12 +13,11 @@ import {
 
 const API_BASE = "https://pooriya-pitranslate.hosting.codeyourfuture.io/api";
 
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import {
   getAuth,
   onAuthStateChanged,
-  signOut
+  signOut,
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 import { firebaseConfig } from "./firebaseConfig.js";
 
@@ -26,20 +25,21 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 onAuthStateChanged(auth, (user) => {
-  const userInfo = document.getElementById("userInfo");
-  const logoutBtn = document.getElementById("logoutBtn");
   const welcomeText = document.getElementById("userWelcome");
-  const authLinks = document.getElementById("authLinks");
+  const logoutBtn   = document.getElementById("logoutBtn");
+  const authLinks   = document.getElementById("authLinks");
 
   if (user) {
     welcomeText.textContent = `👋 Welcome, ${user.displayName || user.email}`;
     logoutBtn.style.display = "inline-block";
-    logoutBtn.addEventListener("click", () => {
-      signOut(auth).then(() => window.location.href = "login-signup.html");
-    });
+    logoutBtn.onclick = () =>
+      signOut(auth).then(() => (window.location.href = "index.html"));
+    if (authLinks) authLinks.style.display = "none";
   } else {
+    welcomeText.textContent = "👋 Welcome, you are in as a guest";
+    logoutBtn.style.display = "none";
     if (authLinks) authLinks.style.display = "block";
-    else window.location.href = "login-signup.html";
+    else window.location.href = "index.html";
   }
 });
 
