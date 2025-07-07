@@ -98,3 +98,20 @@ button:hover {
 .modal-actions button {
   margin: 10px 5px;
 }
+.box {
+  background: var(--box);
+  padding: 2rem;
+  border-radius: 10px;
+  max-width: 400px;
+  margin: 2rem auto;
+  text-align: center;
+}
+
+
+/*Animate buttons*/
+button {
+  transition: all 0.2s ease-in-out;
+}
+button:active {
+  transform: scale(0.97);
+}

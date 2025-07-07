@@ -10,6 +10,16 @@
       <h1>🌍 PiTranslate</h1>
       <button id="themeToggle">🌓 Toggle Theme</button>
     </header>
+
+    <div id="userInfo" style="margin-bottom: 1rem">
+      <p id="userWelcome">Loading...</p>
+      <button id="logoutBtn" style="display: none">Logout</button>
+    </div>
+    <div id="authLinks" style="display: none">
+      <a href="login.html">Login</a> |
+      <a href="signup.html">Sign up</a>
+    </div>
+
     <main class="translator">
       <textarea id="inputText" placeholder="Enter text..."></textarea>
       <select id="targetLang">
@@ -63,6 +73,7 @@
         </div>
       </div>
     </div>
+
     <script>
       window.firebaseConfig = {
         apiKey: "AIzaSyAP35dyrD3OfYyBMXJiR-D_c7S8wEsH_o0",

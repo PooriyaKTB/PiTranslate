@@ -13,6 +13,36 @@ import {
 
 const API_BASE = "https://pooriya-pitranslate.hosting.codeyourfuture.io/api";
 
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+import { firebaseConfig } from "./firebaseConfig.js";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+onAuthStateChanged(auth, (user) => {
+  const userInfo = document.getElementById("userInfo");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const welcomeText = document.getElementById("userWelcome");
+  const authLinks = document.getElementById("authLinks");
+
+  if (user) {
+    welcomeText.textContent = `👋 Welcome, ${user.displayName || user.email}`;
+    logoutBtn.style.display = "inline-block";
+    logoutBtn.addEventListener("click", () => {
+      signOut(auth).then(() => window.location.href = "login.html");
+    });
+  } else {
+    if (authLinks) authLinks.style.display = "block";
+    else window.location.href = "login.html";
+  }
+});
+
 let practiceQueue = [];
 let practiceIndex = 0;
 
