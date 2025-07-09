@@ -26,8 +26,8 @@ const auth = getAuth(app);
 
 onAuthStateChanged(auth, (user) => {
   const welcomeText = document.getElementById("userWelcome");
-  const logoutBtn   = document.getElementById("logoutBtn");
-  const authLinks   = document.getElementById("authLinks");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const authLinks = document.getElementById("authLinks");
 
   if (user) {
     welcomeText.textContent = `👋 Welcome, ${user.displayName || user.email}`;
@@ -84,6 +84,10 @@ function resetPractice() {
 document.getElementById("translateBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
   const targetLang = document.getElementById("targetLang").value;
+  document.getElementById("output").textContent = "";
+  document.getElementById("highlightTranslation").innerHTML = "";
+  document.getElementById("extraDetails").innerHTML = "";
+  document.getElementById("idiomOutput").innerHTML = "";
 
   if (!inputText.trim()) {
     document.getElementById("output").innerText =
