@@ -307,3 +307,20 @@ window.addEventListener("DOMContentLoaded", () => {
   renderFavorites();
   updatePracticeButton();
 });
+
+document.addEventListener("mouseup", async () => {
+  const selected = window.getSelection().toString().trim();
+  const targetLang = document.getElementById("targetLang").value;
+
+  if (selected.length < 1) return;
+
+  const res = await fetch(`${API_BASE}/translate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ inputText: selected, targetLang }),
+  });
+
+  const data = await res.json();
+  const box = document.getElementById("highlightTranslation");
+  box.innerHTML = `<p><strong>${selected}</strong> → ${data.translation}</p>`;
+});

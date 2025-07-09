@@ -40,7 +40,7 @@ Respond strictly in this JSON format:
 
     const content = completion.choices[0].message.content.trim();
 
-    const parsed = JSON.parse(content); 
+    const parsed = JSON.parse(content);
 
     res.json({
       examples: parsed.examples || "Not available",
