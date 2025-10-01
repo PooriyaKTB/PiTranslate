@@ -139,9 +139,12 @@ export function showPracticeCompletionOptions() {
     ? `Last practice: ${lastPracticeDate.toLocaleDateString()} at ${lastPracticeDate.toLocaleTimeString()}`
     : "";
 
-  // Find the next scheduled review time
-  const itemsWithReviews = allFavorites.filter((item) => item.nextReview);
-  const nextReview = itemsWithReviews.sort(
+  // Find the next scheduled review time (future items only)
+  const nowTs = Date.now();
+  const futureItems = allFavorites.filter(
+    (item) => item.nextReview && new Date(item.nextReview).getTime() > nowTs
+  );
+  const nextReview = futureItems.sort(
     (a, b) => new Date(a.nextReview) - new Date(b.nextReview)
   )[0];
 

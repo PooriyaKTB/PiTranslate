@@ -338,12 +338,16 @@ function showCurrentPracticeWord() {
     document.getElementById("knewBtn").disabled = true;
     document.getElementById("didntBtn").disabled = true;
 
-    // Only schedule review if this is the first time practicing or if timer was reset
+    // Only schedule review if this is the first time practicing, timer was reset, or item is due
     const isFirstTime = !getLastPracticeDate();
     const timerWasReset = localStorage.getItem("timerWasReset") === "true";
+    const isDue =
+      !item.nextReview || new Date(item.nextReview).getTime() <= Date.now();
 
-    if (isFirstTime || timerWasReset) {
+    if (isFirstTime || timerWasReset || isDue) {
       scheduleReview(item, true);
+      // Immediately refresh due counter so user sees due → 0
+      updatePracticeButton();
     }
 
     const messages = [
@@ -371,12 +375,16 @@ function showCurrentPracticeWord() {
     document.getElementById("knewBtn").disabled = true;
     document.getElementById("didntBtn").disabled = true;
 
-    // Only schedule review if this is the first time practicing or if timer was reset
+    // Only schedule review if this is the first time practicing, timer was reset, or item is due
     const isFirstTime = !getLastPracticeDate();
     const timerWasReset = localStorage.getItem("timerWasReset") === "true";
+    const isDue =
+      !item.nextReview || new Date(item.nextReview).getTime() <= Date.now();
 
-    if (isFirstTime || timerWasReset) {
+    if (isFirstTime || timerWasReset || isDue) {
       scheduleReview(item, false);
+      // Immediately refresh due counter so user sees due → 0
+      updatePracticeButton();
     }
 
     const messages = [
