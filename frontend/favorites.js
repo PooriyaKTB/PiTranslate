@@ -46,8 +46,22 @@ export function renderFavorites() {
 
   favorites.forEach((item) => {
     const li = document.createElement("li");
-    li.innerHTML = `📌 <strong>${item.text}</strong> → ${item.translation}
-      <button onclick="removeFavoriteAndRender('${item.id}')">❌</button>`;
+
+    // Add text content safely
+    li.appendChild(document.createTextNode("📌 "));
+
+    const strong = document.createElement("strong");
+    strong.textContent = item.text;
+    li.appendChild(strong);
+
+    li.appendChild(document.createTextNode(` → ${item.translation}`));
+
+    // Add remove button safely
+    const removeBtn = document.createElement("button");
+    removeBtn.textContent = "❌";
+    removeBtn.addEventListener("click", () => removeFavoriteAndRender(item.id));
+    li.appendChild(removeBtn);
+
     list.appendChild(li);
   });
   updatePracticeButton();

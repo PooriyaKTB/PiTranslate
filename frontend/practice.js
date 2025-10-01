@@ -151,28 +151,56 @@ export function showPracticeCompletionOptions() {
       ).toLocaleDateString()}`
     : "No scheduled practice sessions";
 
-  box.innerHTML = `
-    <div style="text-align: center; padding: 2rem;">
-      <h3>🎉 Practice Complete!</h3>
-      <p>You've finished practicing all ${allFavorites.length} words!</p>
-      ${
-        lastPracticeText
-          ? `<p style="color: #28a745; font-weight: bold;">${lastPracticeText}</p>`
-          : ""
-      }
-      <div style="margin: 1.5rem 0;">
-        <button id="startAgainBtn" style="margin: 0.5rem; padding: 0.8rem 1.5rem; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer;">
-          🔁 Start Practice Again
-        </button>
-        <button id="resetTimerBtn" style="margin: 0.5rem; padding: 0.8rem 1.5rem; background: #ffc107; color: #212529; border: none; border-radius: 6px; cursor: pointer;">
-          ⏰ Reset Next Practice Time
-        </button>
-      </div>
-      <p style="color: #666; font-size: 0.9rem;">
-        ${nextReviewText}
-      </p>
-    </div>
-  `;
+  box.innerHTML = ""; // Clear existing content
+
+  const containerDiv = document.createElement("div");
+  containerDiv.style.cssText = "text-align: center; padding: 2rem;";
+
+  // Title
+  const title = document.createElement("h3");
+  title.textContent = "🎉 Practice Complete!";
+  containerDiv.appendChild(title);
+
+  // Completion message
+  const completionMsg = document.createElement("p");
+  completionMsg.textContent = `You've finished practicing all ${allFavorites.length} words!`;
+  containerDiv.appendChild(completionMsg);
+
+  // Last practice date (if exists)
+  if (lastPracticeText) {
+    const lastPracticePara = document.createElement("p");
+    lastPracticePara.style.cssText = "color: #28a745; font-weight: bold;";
+    lastPracticePara.textContent = lastPracticeText;
+    containerDiv.appendChild(lastPracticePara);
+  }
+
+  // Button container
+  const buttonContainer = document.createElement("div");
+  buttonContainer.style.cssText = "margin: 1.5rem 0;";
+
+  const startAgainBtn = document.createElement("button");
+  startAgainBtn.id = "startAgainBtn";
+  startAgainBtn.textContent = "🔁 Start Practice Again";
+  startAgainBtn.style.cssText =
+    "margin: 0.5rem; padding: 0.8rem 1.5rem; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer;";
+  buttonContainer.appendChild(startAgainBtn);
+
+  const resetTimerBtn = document.createElement("button");
+  resetTimerBtn.id = "resetTimerBtn";
+  resetTimerBtn.textContent = "⏰ Reset Next Practice Time";
+  resetTimerBtn.style.cssText =
+    "margin: 0.5rem; padding: 0.8rem 1.5rem; background: #ffc107; color: #212529; border: none; border-radius: 6px; cursor: pointer;";
+  buttonContainer.appendChild(resetTimerBtn);
+
+  containerDiv.appendChild(buttonContainer);
+
+  // Next review text
+  const nextReviewPara = document.createElement("p");
+  nextReviewPara.style.cssText = "color: #666; font-size: 0.9rem;";
+  nextReviewPara.textContent = nextReviewText;
+  containerDiv.appendChild(nextReviewPara);
+
+  box.appendChild(containerDiv);
 
   // Handle start practice again (no timer change)
   document.getElementById("startAgainBtn").onclick = () => {
@@ -189,15 +217,28 @@ export function showPracticeCompletionOptions() {
 
     // Show confirmation message
     const box = document.getElementById("practiceArea");
-    box.innerHTML = `
-      <div style="text-align: center; padding: 2rem;">
-        <h3>⏰ Timer Reset!</h3>
-        <p>Next practice times have been reset based on your current progress.</p>
-        <button id="startPracticeAfterReset" style="margin: 1rem; padding: 0.8rem 1.5rem; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer;">
-          🔁 Start Practice
-        </button>
-      </div>
-    `;
+    box.innerHTML = ""; // Clear existing content
+
+    const containerDiv = document.createElement("div");
+    containerDiv.style.cssText = "text-align: center; padding: 2rem;";
+
+    const title = document.createElement("h3");
+    title.textContent = "⏰ Timer Reset!";
+    containerDiv.appendChild(title);
+
+    const message = document.createElement("p");
+    message.textContent =
+      "Next practice times have been reset based on your current progress.";
+    containerDiv.appendChild(message);
+
+    const startBtn = document.createElement("button");
+    startBtn.id = "startPracticeAfterReset";
+    startBtn.textContent = "🔁 Start Practice";
+    startBtn.style.cssText =
+      "margin: 1rem; padding: 0.8rem 1.5rem; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer;";
+    containerDiv.appendChild(startBtn);
+
+    box.appendChild(containerDiv);
 
     document.getElementById("startPracticeAfterReset").onclick = () => {
       if (window.startPracticeAllWords) {

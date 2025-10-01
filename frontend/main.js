@@ -238,30 +238,76 @@ function showCurrentPracticeWord() {
 
   const item = practiceQueue[practiceIndex];
 
-  box.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-      <button id="prevWordBtn" ${
-        practiceIndex === 0 ? "disabled" : ""
-      } style="padding: 0.5rem 1rem; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
-        ← Previous
-      </button>
-      <span style="font-weight: bold;">${practiceIndex + 1} / ${
-    practiceQueue.length
-  }</span>
-      <button id="nextWordBtn" style="padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
-        Next →
-      </button>
-    </div>
-    <p><strong>Translate this:</strong> ${item.text}</p>
-    <details id="answerDetails">
-      <summary>Show Answer</summary>
-      <p>${item.translation}</p>
-      <div id="feedbackButtons" style="margin-top: 10px; display: none;">
-        <button id="knewBtn">✅ I knew it</button>
-        <button id="didntBtn">❌ I didn't know it</button>
-      </div>
-    </details>
-  `;
+  box.innerHTML = ""; // Clear existing content
+
+  // Create navigation container
+  const navDiv = document.createElement("div");
+  navDiv.style.cssText =
+    "display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;";
+
+  // Previous button
+  const prevBtn = document.createElement("button");
+  prevBtn.id = "prevWordBtn";
+  prevBtn.textContent = "← Previous";
+  prevBtn.style.cssText =
+    "padding: 0.5rem 1rem; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;";
+  if (practiceIndex === 0) {
+    prevBtn.disabled = true;
+  }
+  navDiv.appendChild(prevBtn);
+
+  // Counter span
+  const counterSpan = document.createElement("span");
+  counterSpan.style.fontWeight = "bold";
+  counterSpan.textContent = `${practiceIndex + 1} / ${practiceQueue.length}`;
+  navDiv.appendChild(counterSpan);
+
+  // Next button
+  const nextBtn = document.createElement("button");
+  nextBtn.id = "nextWordBtn";
+  nextBtn.textContent = "Next →";
+  nextBtn.style.cssText =
+    "padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;";
+  navDiv.appendChild(nextBtn);
+
+  box.appendChild(navDiv);
+
+  // Question paragraph
+  const questionPara = document.createElement("p");
+  const questionStrong = document.createElement("strong");
+  questionStrong.textContent = "Translate this: ";
+  questionPara.appendChild(questionStrong);
+  questionPara.appendChild(document.createTextNode(item.text));
+  box.appendChild(questionPara);
+
+  // Details element
+  const details = document.createElement("details");
+  details.id = "answerDetails";
+
+  const summary = document.createElement("summary");
+  summary.textContent = "Show Answer";
+  details.appendChild(summary);
+
+  const answerPara = document.createElement("p");
+  answerPara.textContent = item.translation;
+  details.appendChild(answerPara);
+
+  const feedbackDiv = document.createElement("div");
+  feedbackDiv.id = "feedbackButtons";
+  feedbackDiv.style.cssText = "margin-top: 10px; display: none;";
+
+  const knewBtn = document.createElement("button");
+  knewBtn.id = "knewBtn";
+  knewBtn.textContent = "✅ I knew it";
+  feedbackDiv.appendChild(knewBtn);
+
+  const didntBtn = document.createElement("button");
+  didntBtn.id = "didntBtn";
+  didntBtn.textContent = "❌ I didn't know it";
+  feedbackDiv.appendChild(didntBtn);
+
+  details.appendChild(feedbackDiv);
+  box.appendChild(details);
 
   document
     .querySelector("#answerDetails")
@@ -430,23 +476,46 @@ document.getElementById("detailsBtn").addEventListener("click", async () => {
 
   const data = await res.json();
 
-  const examplesText = Array.isArray(data.examples)
-    ? data.examples
-        .map((ex) => `${ex?.text || ""} → ${ex?.translation || ""}`)
-        .join("<br>")
-    : "No examples available.";
-
-  const synonymsText = Array.isArray(data.synonyms)
-    ? data.synonyms
-        .map((s) => `${s?.word || ""} → ${s?.translation || ""}`)
-        .join("<br>")
-    : "No synonyms available.";
-
   const extraDetailsElement = document.getElementById("extraDetails");
-  extraDetailsElement.innerHTML = `
-    <h4>Examples:</h4><p>${examplesText}</p>
-    <h4>Synonyms:</h4><p>${synonymsText}</p>
-  `;
+  extraDetailsElement.innerHTML = ""; // Clear existing content
+
+  // Create Examples section
+  const examplesHeading = document.createElement("h4");
+  examplesHeading.textContent = "Examples:";
+  extraDetailsElement.appendChild(examplesHeading);
+
+  const examplesPara = document.createElement("p");
+  if (Array.isArray(data.examples)) {
+    const examplesList = document.createElement("div");
+    data.examples.forEach((ex) => {
+      const exampleDiv = document.createElement("div");
+      exampleDiv.textContent = `${ex?.text || ""} → ${ex?.translation || ""}`;
+      examplesList.appendChild(exampleDiv);
+    });
+    examplesPara.appendChild(examplesList);
+  } else {
+    examplesPara.textContent = "No examples available.";
+  }
+  extraDetailsElement.appendChild(examplesPara);
+
+  // Create Synonyms section
+  const synonymsHeading = document.createElement("h4");
+  synonymsHeading.textContent = "Synonyms:";
+  extraDetailsElement.appendChild(synonymsHeading);
+
+  const synonymsPara = document.createElement("p");
+  if (Array.isArray(data.synonyms)) {
+    const synonymsList = document.createElement("div");
+    data.synonyms.forEach((s) => {
+      const synonymDiv = document.createElement("div");
+      synonymDiv.textContent = `${s?.word || ""} → ${s?.translation || ""}`;
+      synonymsList.appendChild(synonymDiv);
+    });
+    synonymsPara.appendChild(synonymsList);
+  } else {
+    synonymsPara.textContent = "No synonyms available.";
+  }
+  extraDetailsElement.appendChild(synonymsPara);
   extraDetailsElement.classList.remove("hidden");
 });
 
@@ -471,11 +540,34 @@ document.getElementById("idiomBtn").addEventListener("click", async () => {
   const data = await res.json();
 
   const idiomOutputElement = document.getElementById("idiomOutput");
-  idiomOutputElement.innerHTML = `
-    <h4>📌 Idiom:</h4><p>${data.idiom}</p>
-    <h4>💬 Meaning:</h4><p>${data.meaning}</p>
-    <h4>🌍 Equivalent in ${targetLang}:</h4><p>${data.equivalent}</p>
-  `;
+  idiomOutputElement.innerHTML = ""; // Clear existing content
+
+  // Create Idiom section
+  const idiomHeading = document.createElement("h4");
+  idiomHeading.textContent = "📌 Idiom:";
+  idiomOutputElement.appendChild(idiomHeading);
+
+  const idiomPara = document.createElement("p");
+  idiomPara.textContent = data.idiom || "Not available";
+  idiomOutputElement.appendChild(idiomPara);
+
+  // Create Meaning section
+  const meaningHeading = document.createElement("h4");
+  meaningHeading.textContent = "💬 Meaning:";
+  idiomOutputElement.appendChild(meaningHeading);
+
+  const meaningPara = document.createElement("p");
+  meaningPara.textContent = data.meaning || "Not available";
+  idiomOutputElement.appendChild(meaningPara);
+
+  // Create Equivalent section
+  const equivalentHeading = document.createElement("h4");
+  equivalentHeading.textContent = `🌍 Equivalent in ${targetLang}:`;
+  idiomOutputElement.appendChild(equivalentHeading);
+
+  const equivalentPara = document.createElement("p");
+  equivalentPara.textContent = data.equivalent || "Not available";
+  idiomOutputElement.appendChild(equivalentPara);
   idiomOutputElement.classList.remove("hidden");
 });
 
@@ -580,6 +672,15 @@ document.addEventListener("mouseup", async () => {
 
   const data = await res.json();
   const box = document.getElementById("highlightTranslation");
-  box.innerHTML = `<p><strong>${selected}</strong> → ${data.translation}</p>`;
+  box.innerHTML = ""; // Clear existing content
+
+  const para = document.createElement("p");
+  const strong = document.createElement("strong");
+  strong.textContent = selected;
+  para.appendChild(strong);
+  para.appendChild(
+    document.createTextNode(` → ${data.translation || "Translation failed"}`)
+  );
+  box.appendChild(para);
   box.classList.remove("hidden");
 });
