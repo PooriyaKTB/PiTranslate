@@ -18,6 +18,58 @@ import {
 
 const API_BASE = "https://pooriya-pitranslate.hosting.codeyourfuture.io/api";
 
+// Centralized API call helper with loading and error handling
+async function apiCall(
+  endpoint,
+  payload,
+  { buttonEl, spinnerEl, timeoutMs = 15000 } = {}
+) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    // Show loading state
+    if (buttonEl) buttonEl.setAttribute("disabled", "true");
+    if (spinnerEl) spinnerEl.classList.remove("hidden");
+
+    const res = await fetch(`${API_BASE}/${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    return await res.json();
+  } catch (error) {
+    clearTimeout(timeoutId);
+    showFeedbackPopup("Request failed. Please try again.", "warning");
+    return null;
+  } finally {
+    // Restore UI state
+    if (buttonEl) buttonEl.removeAttribute("disabled");
+    if (spinnerEl) spinnerEl.classList.add("hidden");
+  }
+}
+
+// Tiny spinner utility
+function ensureInlineSpinner(afterEl, id) {
+  let sp = document.getElementById(id);
+  if (!sp) {
+    sp = document.createElement("span");
+    sp.id = id;
+    sp.className = "spinner hidden";
+    sp.textContent = " Loading…";
+    afterEl.insertAdjacentElement("afterend", sp);
+  }
+  return sp;
+}
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import {
   getAuth,
@@ -435,13 +487,16 @@ document.getElementById("translateBtn").addEventListener("click", async () => {
     return;
   }
 
-  const res = await fetch(`${API_BASE}/translate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ inputText, targetLang }),
-  });
+  const translateBtn = document.getElementById("translateBtn");
+  const spinnerEl = ensureInlineSpinner(translateBtn, "translateSpinner");
 
-  const data = await res.json();
+  const data = await apiCall(
+    "translate",
+    { inputText, targetLang },
+    { buttonEl: translateBtn, spinnerEl }
+  );
+  if (!data) return; // toast already shown
+
   const outputElement = document.getElementById("output");
   outputElement.textContent = data.translation || "Translation failed";
   outputElement.classList.remove("hidden");
@@ -476,13 +531,15 @@ document.getElementById("detailsBtn").addEventListener("click", async () => {
     return;
   }
 
-  const res = await fetch(`${API_BASE}/details`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ inputText, targetLang }),
-  });
+  const detailsBtn = document.getElementById("detailsBtn");
+  const spinnerEl = ensureInlineSpinner(detailsBtn, "detailsSpinner");
 
-  const data = await res.json();
+  const data = await apiCall(
+    "details",
+    { inputText, targetLang },
+    { buttonEl: detailsBtn, spinnerEl }
+  );
+  if (!data) return; // toast already shown
 
   const extraDetailsElement = document.getElementById("extraDetails");
   extraDetailsElement.innerHTML = ""; // Clear existing content
@@ -539,13 +596,15 @@ document.getElementById("idiomBtn").addEventListener("click", async () => {
     return;
   }
 
-  const res = await fetch(`${API_BASE}/idiom`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ inputText, targetLang, inputLang: "auto" }),
-  });
+  const idiomBtn = document.getElementById("idiomBtn");
+  const spinnerEl = ensureInlineSpinner(idiomBtn, "idiomSpinner");
 
-  const data = await res.json();
+  const data = await apiCall(
+    "idiom",
+    { inputText, targetLang, inputLang: "auto" },
+    { buttonEl: idiomBtn, spinnerEl }
+  );
+  if (!data) return; // toast already shown
 
   const idiomOutputElement = document.getElementById("idiomOutput");
   idiomOutputElement.innerHTML = ""; // Clear existing content
@@ -672,14 +731,16 @@ document.addEventListener("mouseup", async () => {
 
   if (selected.length < 1) return;
 
-  const res = await fetch(`${API_BASE}/translate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ inputText: selected, targetLang }),
-  });
-
-  const data = await res.json();
   const box = document.getElementById("highlightTranslation");
+  const spinnerEl = ensureInlineSpinner(box, "selectionSpinner");
+
+  const data = await apiCall(
+    "translate",
+    { inputText: selected, targetLang },
+    { spinnerEl }
+  );
+  if (!data) return; // toast already shown
+
   box.innerHTML = ""; // Clear existing content
 
   const para = document.createElement("p");

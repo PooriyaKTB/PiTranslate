@@ -76,6 +76,11 @@ button:hover {
   display: none;
 }
 
+.spinner {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
 .modal {
   position: fixed;
   top: 0;
