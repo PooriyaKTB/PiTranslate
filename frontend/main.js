@@ -24,6 +24,35 @@ import { firebaseConfig } from "./firebaseConfig.js";
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+// Wait for DOM to be ready before manipulating elements
+document.addEventListener("DOMContentLoaded", () => {
+  // Hide the detail sections initially, but keep the output visible
+  const detailPart = document.getElementById("output").closest("div");
+  console.log(detailPart);
+  console.log(detailPart.children);
+
+  // Hide all output sections initially
+  const detailSections = [
+    "output",
+    "highlightTranslation",
+    "extraDetails",
+    "idiomOutput",
+    "practiceArea",
+  ];
+  detailSections.forEach((id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.classList.add("hidden");
+    }
+  });
+
+  // Initialize app
+  const savedTheme = localStorage.getItem("theme") || "light";
+  document.documentElement.setAttribute("data-theme", savedTheme);
+  renderFavorites();
+  updatePracticeButton();
+});
+
 onAuthStateChanged(auth, (user) => {
   const welcomeText = document.getElementById("userWelcome");
   const logoutBtn = document.getElementById("logoutBtn");
@@ -85,13 +114,21 @@ document.getElementById("translateBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
   const targetLang = document.getElementById("targetLang").value;
   document.getElementById("output").textContent = "";
+  document.getElementById("output").classList.add("hidden");
+
   document.getElementById("highlightTranslation").innerHTML = "";
+  document.getElementById("highlightTranslation").classList.add("hidden");
+
   document.getElementById("extraDetails").innerHTML = "";
+  document.getElementById("extraDetails").classList.add("hidden");
+
   document.getElementById("idiomOutput").innerHTML = "";
+  document.getElementById("idiomOutput").classList.add("hidden");
 
   if (!inputText.trim()) {
-    document.getElementById("output").innerText =
-      "Please enter text to translate.";
+    const outputElement = document.getElementById("output");
+    outputElement.innerText = "Please enter text to translate.";
+    outputElement.classList.remove("hidden");
     return;
   }
 
@@ -102,8 +139,9 @@ document.getElementById("translateBtn").addEventListener("click", async () => {
   });
 
   const data = await res.json();
-  document.getElementById("output").textContent =
-    data.translation || "Translation failed";
+  const outputElement = document.getElementById("output");
+  outputElement.textContent = data.translation || "Translation failed";
+  outputElement.classList.remove("hidden");
 });
 
 let availableVoices = [];
@@ -128,8 +166,10 @@ document.getElementById("detailsBtn").addEventListener("click", async () => {
   const targetLang = document.getElementById("targetLang").value;
 
   if (!inputText.trim()) {
-    document.getElementById("extraDetails").innerHTML =
+    const extraDetailsElement = document.getElementById("extraDetails");
+    extraDetailsElement.innerHTML =
       "<p style='color: red;'>Please enter a word or phrase first!</p>";
+    extraDetailsElement.classList.remove("hidden");
     return;
   }
 
@@ -153,10 +193,12 @@ document.getElementById("detailsBtn").addEventListener("click", async () => {
         .join("<br>")
     : "No synonyms available.";
 
-  document.getElementById("extraDetails").innerHTML = `
+  const extraDetailsElement = document.getElementById("extraDetails");
+  extraDetailsElement.innerHTML = `
     <h4>Examples:</h4><p>${examplesText}</p>
     <h4>Synonyms:</h4><p>${synonymsText}</p>
   `;
+  extraDetailsElement.classList.remove("hidden");
 });
 
 document.getElementById("idiomBtn").addEventListener("click", async () => {
@@ -164,8 +206,10 @@ document.getElementById("idiomBtn").addEventListener("click", async () => {
   const targetLang = document.getElementById("targetLang").value;
 
   if (!inputText.trim()) {
-    document.getElementById("idiomOutput").innerHTML =
+    const idiomOutputElement = document.getElementById("idiomOutput");
+    idiomOutputElement.innerHTML =
       "<p style='color: red;'>Please enter a word or phrase first.</p>";
+    idiomOutputElement.classList.remove("hidden");
     return;
   }
 
@@ -177,11 +221,13 @@ document.getElementById("idiomBtn").addEventListener("click", async () => {
 
   const data = await res.json();
 
-  document.getElementById("idiomOutput").innerHTML = `
+  const idiomOutputElement = document.getElementById("idiomOutput");
+  idiomOutputElement.innerHTML = `
     <h4>📌 Idiom:</h4><p>${data.idiom}</p>
     <h4>💬 Meaning:</h4><p>${data.meaning}</p>
     <h4>🌍 Equivalent in ${targetLang}:</h4><p>${data.equivalent}</p>
   `;
+  idiomOutputElement.classList.remove("hidden");
 });
 
 document.getElementById("favBtn").addEventListener("click", () => {
@@ -209,6 +255,7 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   }
 
   const box = document.getElementById("practiceArea");
+  box.classList.remove("hidden");
 
   if (practiceQueue.length === 0) {
     box.innerHTML = `<p>No words due for practice.</p>`;
@@ -305,12 +352,13 @@ cancelBtn?.addEventListener("click", () => {
   modal.classList.add("hidden");
 });
 
-window.addEventListener("DOMContentLoaded", () => {
-  const savedTheme = localStorage.getItem("theme") || "light";
-  document.documentElement.setAttribute("data-theme", savedTheme);
-  renderFavorites();
-  updatePracticeButton();
-});
+// This is now handled in the DOMContentLoaded event above
+// window.addEventListener("DOMContentLoaded", () => {
+//   const savedTheme = localStorage.getItem("theme") || "light";
+//   document.documentElement.setAttribute("data-theme", savedTheme);
+//   renderFavorites();
+//   updatePracticeButton();
+// });
 
 document.addEventListener("mouseup", async () => {
   const selected = window.getSelection().toString().trim();
@@ -327,4 +375,5 @@ document.addEventListener("mouseup", async () => {
   const data = await res.json();
   const box = document.getElementById("highlightTranslation");
   box.innerHTML = `<p><strong>${selected}</strong> → ${data.translation}</p>`;
+  box.classList.remove("hidden");
 });
