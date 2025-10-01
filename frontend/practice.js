@@ -21,13 +21,19 @@ export function updatePracticeButton() {
   const practiceStarted = localStorage.getItem("practiceStarted");
   const practiceIndex = parseInt(localStorage.getItem("practiceIndex")) || 0;
 
-  // Update due count status line
+  // Update due count status line (only show if there are favorites)
+  const allFavorites = getAllFavorites();
   const dueItemsCount = getDueItems().length;
   if (dueCount) {
-    dueCount.textContent = `✅ ${dueItemsCount} words are due today`;
-    dueCount.style.color = "#28a745";
-    dueCount.style.fontSize = "0.9rem";
-    dueCount.style.margin = "0.5rem 0";
+    if (allFavorites.length > 0) {
+      dueCount.textContent = `✅ ${dueItemsCount} words are due today`;
+      dueCount.style.color = "#28a745";
+      dueCount.style.fontSize = "0.9rem";
+      dueCount.style.margin = "0.5rem 0";
+      dueCount.style.display = "block";
+    } else {
+      dueCount.style.display = "none";
+    }
   }
 
   // Don't show buttons if practice has started (they should be hidden)
