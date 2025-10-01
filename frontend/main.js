@@ -141,6 +141,33 @@ function startPracticeAllWords() {
   showCurrentPracticeWord();
 }
 
+function startPracticeDueWords() {
+  const dueItems = getDueItems();
+
+  if (dueItems.length === 0) {
+    // No due words, show popup notification
+    showFeedbackPopup(
+      "No due words right now. You can still practice all words.",
+      "warning"
+    );
+    return;
+  }
+
+  // Randomize the queue each time (same pattern as startPracticeAllWords)
+  const shuffledDueItems = [...dueItems].sort(() => Math.random() - 0.5);
+  localStorage.setItem("practiceQueue", JSON.stringify(shuffledDueItems));
+  localStorage.setItem("practiceIndex", "0");
+  localStorage.setItem("practiceStarted", "true");
+  // Hide the practice area initially, it will be shown when practice starts
+  document.getElementById("practiceArea").classList.add("hidden");
+  updatePracticeButton();
+
+  // Set up the practice variables and show the first word directly
+  practiceQueue = shuffledDueItems;
+  practiceIndex = 0;
+  showCurrentPracticeWord();
+}
+
 // Function to show feedback popup
 function showFeedbackPopup(message, type) {
   // Remove any existing popup
@@ -329,6 +356,7 @@ function showCurrentPracticeWord() {
 
 // Make functions available globally for practice.js
 window.startPracticeAllWords = startPracticeAllWords;
+window.startPracticeDueWords = startPracticeDueWords;
 window.resetPractice = resetPractice;
 
 document.getElementById("translateBtn").addEventListener("click", async () => {
@@ -480,6 +508,16 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
     console.warn(
       "Start Practice button clicked during active practice session"
     );
+  }
+});
+
+document.getElementById("dueWordsBtn").addEventListener("click", () => {
+  if (!localStorage.getItem("practiceStarted")) {
+    // Start practice with due words only
+    startPracticeDueWords();
+  } else {
+    // This should not happen since the button is hidden during practice
+    console.warn("Due Words button clicked during active practice session");
   }
 });
 

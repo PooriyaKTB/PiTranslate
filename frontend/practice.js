@@ -15,13 +15,25 @@ export function getDueItems() {
 
 export function updatePracticeButton() {
   const btn = document.getElementById("nextPracticeBtn");
+  const dueBtn = document.getElementById("dueWordsBtn");
+  const dueCount = document.getElementById("dueCount");
   const queue = JSON.parse(localStorage.getItem("practiceQueue") || "[]");
   const practiceStarted = localStorage.getItem("practiceStarted");
   const practiceIndex = parseInt(localStorage.getItem("practiceIndex")) || 0;
 
-  // Don't show button if practice has started (it should be hidden)
+  // Update due count status line
+  const dueItemsCount = getDueItems().length;
+  if (dueCount) {
+    dueCount.textContent = `✅ ${dueItemsCount} words are due today`;
+    dueCount.style.color = "#28a745";
+    dueCount.style.fontSize = "0.9rem";
+    dueCount.style.margin = "0.5rem 0";
+  }
+
+  // Don't show buttons if practice has started (they should be hidden)
   if (practiceStarted) {
     btn.style.display = "none";
+    if (dueBtn) dueBtn.style.display = "none";
     return;
   }
 
@@ -35,10 +47,12 @@ export function updatePracticeButton() {
       localStorage.setItem("practiceQueue", JSON.stringify(shuffledFavorites));
       btn.style.display = "inline-block";
       btn.textContent = "▶️ Start Practice";
+      if (dueBtn) dueBtn.style.display = "inline-block";
       return;
     }
     // No favorites at all
     btn.style.display = "none";
+    if (dueBtn) dueBtn.style.display = "none";
     localStorage.removeItem("practiceStarted");
     localStorage.removeItem("practiceIndex");
     return;
@@ -46,6 +60,7 @@ export function updatePracticeButton() {
 
   btn.style.display = "inline-block";
   btn.textContent = "▶️ Start Practice";
+  if (dueBtn) dueBtn.style.display = "inline-block";
 }
 
 export function scheduleReview(item, knewIt) {
@@ -105,6 +120,12 @@ export function showPracticeCompletionOptions() {
 
   // Make practice area visible
   box.classList.remove("hidden");
+
+  // Hide practice buttons when showing completion options
+  const nextBtn = document.getElementById("nextPracticeBtn");
+  const dueBtn = document.getElementById("dueWordsBtn");
+  if (nextBtn) nextBtn.style.display = "none";
+  if (dueBtn) dueBtn.style.display = "none";
 
   // Set the last practice date (update it every time practice is completed)
   setLastPracticeDate();

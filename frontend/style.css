@@ -111,7 +111,6 @@ button:hover {
   text-align: center;
 }
 
-
 /*Animate buttons*/
 button {
   transition: all 0.2s ease-in-out;
@@ -131,4 +130,11 @@ button:active {
 }
 .back-btn:hover {
   background: var(--box);
+}
+
+.practice-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
 }
