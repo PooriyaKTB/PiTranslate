@@ -465,6 +465,31 @@ window.startPracticeAllWords = startPracticeAllWords;
 window.startPracticeDueWords = startPracticeDueWords;
 window.resetPractice = resetPractice;
 
+// Debounced input clearing functionality
+let clearOutputsDebounceId;
+
+// Debounced selection translation functionality
+let selectionDebounceId;
+let lastSelectionText = "";
+
+function clearOutputsNow() {
+  const ids = ["output", "extraDetails", "idiomOutput", "highlightTranslation"];
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // Clear content safely
+    el.textContent = "";
+    // Hide the container
+    el.classList.add("hidden");
+  });
+}
+
+// Add input listener to clear outputs when user types
+document.getElementById("inputText").addEventListener("input", () => {
+  clearTimeout(clearOutputsDebounceId);
+  clearOutputsDebounceId = setTimeout(clearOutputsNow, 250);
+});
+
 document.getElementById("translateBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
   const targetLang = document.getElementById("targetLang").value;
@@ -725,31 +750,41 @@ cancelBtn?.addEventListener("click", () => {
   modal.classList.add("hidden");
 });
 
-document.addEventListener("mouseup", async () => {
+function handleSelectionTranslate() {
   const selected = window.getSelection().toString().trim();
   const targetLang = document.getElementById("targetLang").value;
 
   if (selected.length < 1) return;
 
+  // Optional small optimization: skip if same as last time
+  if (selected === lastSelectionText) return;
+  lastSelectionText = selected;
+
   const box = document.getElementById("highlightTranslation");
   const spinnerEl = ensureInlineSpinner(box, "selectionSpinner");
 
-  const data = await apiCall(
-    "translate",
-    { inputText: selected, targetLang },
-    { spinnerEl }
-  );
-  if (!data) return; // toast already shown
+  apiCall("translate", { inputText: selected, targetLang }, { spinnerEl }).then(
+    (data) => {
+      if (!data) return; // toast already shown
 
-  box.innerHTML = ""; // Clear existing content
+      box.innerHTML = ""; // Clear existing content
 
-  const para = document.createElement("p");
-  const strong = document.createElement("strong");
-  strong.textContent = selected;
-  para.appendChild(strong);
-  para.appendChild(
-    document.createTextNode(` → ${data.translation || "Translation failed"}`)
+      const para = document.createElement("p");
+      const strong = document.createElement("strong");
+      strong.textContent = selected;
+      para.appendChild(strong);
+      para.appendChild(
+        document.createTextNode(
+          ` → ${data.translation || "Translation failed"}`
+        )
+      );
+      box.appendChild(para);
+      box.classList.remove("hidden");
+    }
   );
-  box.appendChild(para);
-  box.classList.remove("hidden");
+}
+
+document.addEventListener("mouseup", () => {
+  clearTimeout(selectionDebounceId);
+  selectionDebounceId = setTimeout(handleSelectionTranslate, 300);
 });
