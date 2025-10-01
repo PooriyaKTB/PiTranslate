@@ -7,8 +7,13 @@ import {
 } from "./favorites.js";
 import {
   getDueItems,
+  getAllFavorites,
   scheduleReview,
   updatePracticeButton,
+  showPracticeCompletionOptions,
+  resetPracticeTimer,
+  setLastPracticeDate,
+  getLastPracticeDate,
 } from "./practice.js";
 
 const API_BASE = "https://pooriya-pitranslate.hosting.codeyourfuture.io/api";
@@ -28,8 +33,6 @@ const auth = getAuth(app);
 document.addEventListener("DOMContentLoaded", () => {
   // Hide the detail sections initially, but keep the output visible
   const detailPart = document.getElementById("output").closest("div");
-  console.log(detailPart);
-  console.log(detailPart.children);
 
   // Hide all output sections initially
   const detailSections = [
@@ -50,7 +53,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const savedTheme = localStorage.getItem("theme") || "light";
   document.documentElement.setAttribute("data-theme", savedTheme);
   renderFavorites();
-  updatePracticeButton();
+
+  // Check if user has already practiced and show completion page
+  const lastPracticeDate = getLastPracticeDate();
+  const practiceStarted = localStorage.getItem("practiceStarted");
+
+  if (lastPracticeDate && !practiceStarted) {
+    // User has practiced before, show completion page and hide the top button
+    showPracticeCompletionOptions();
+    document.getElementById("nextPracticeBtn").style.display = "none";
+  } else {
+    // First time or no previous practice, show start button
+    updatePracticeButton();
+  }
 });
 
 onAuthStateChanged(auth, (user) => {
@@ -83,13 +98,12 @@ window.removeFavoriteAndRender = (id) => {
 };
 
 function buildPracticeQueue() {
-  const dueItems = getDueItems().sort(
-    (a, b) => new Date(a.nextReview || 0) - new Date(b.nextReview || 0)
-  );
-  localStorage.setItem("practiceQueue", JSON.stringify(dueItems));
-  // localStorage.setItem("practiceIndex", "0");
+  const allFavorites = getAllFavorites();
+  // Randomize the queue each time
+  const shuffledFavorites = [...allFavorites].sort(() => Math.random() - 0.5);
+  localStorage.setItem("practiceQueue", JSON.stringify(shuffledFavorites));
   updatePracticeButton();
-  return dueItems;
+  return shuffledFavorites;
 }
 
 function resetPractice() {
@@ -109,6 +123,186 @@ function resetPractice() {
   document.getElementById("nextPracticeBtn").textContent = "Start Practice";
   document.getElementById("nextPracticeBtn").style.display = "inline-block";
 }
+
+function startPracticeAllWords() {
+  const allFavorites = loadFavorites();
+  // Randomize the queue each time
+  const shuffledFavorites = [...allFavorites].sort(() => Math.random() - 0.5);
+  localStorage.setItem("practiceQueue", JSON.stringify(shuffledFavorites));
+  localStorage.setItem("practiceIndex", "0");
+  localStorage.setItem("practiceStarted", "true");
+  // Hide the practice area initially, it will be shown when practice starts
+  document.getElementById("practiceArea").classList.add("hidden");
+  updatePracticeButton();
+
+  // Set up the practice variables and show the first word directly
+  practiceQueue = shuffledFavorites;
+  practiceIndex = 0;
+  showCurrentPracticeWord();
+}
+
+// Function to show feedback popup
+function showFeedbackPopup(message, type) {
+  // Remove any existing popup
+  const existingPopup = document.getElementById("feedbackPopup");
+  if (existingPopup) {
+    existingPopup.remove();
+  }
+
+  // Create popup
+  const popup = document.createElement("div");
+  popup.id = "feedbackPopup";
+  popup.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: ${type === "success" ? "#d4edda" : "#fff3cd"};
+    color: ${type === "success" ? "#155724" : "#856404"};
+    border: 1px solid ${type === "success" ? "#c3e6cb" : "#ffeaa7"};
+    border-radius: 8px;
+    padding: 1.5rem 2rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-align: center;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    max-width: 400px;
+    word-wrap: break-word;
+  `;
+  popup.textContent = message;
+
+  document.body.appendChild(popup);
+
+  // Auto-remove after 2 seconds
+  setTimeout(() => {
+    if (popup.parentNode) {
+      popup.remove();
+    }
+  }, 2000);
+}
+
+// Function to show current practice word without changing index
+function showCurrentPracticeWord() {
+  const box = document.getElementById("practiceArea");
+  box.classList.remove("hidden");
+
+  // Don't rebuild queue here - use the existing queue (could be all favorites or just due items)
+  // practiceQueue = buildPracticeQueue(); // This was overriding the "all favorites" queue!
+
+  if (practiceQueue.length === 0) {
+    // Show completion options instead of just "no words" message
+    showPracticeCompletionOptions();
+    localStorage.removeItem("practiceStarted");
+    localStorage.removeItem("practiceIndex");
+    return;
+  }
+
+  // Check if we've completed all items in the queue
+  if (practiceIndex >= practiceQueue.length) {
+    showPracticeCompletionOptions();
+    localStorage.removeItem("practiceStarted");
+    localStorage.removeItem("practiceIndex");
+    return;
+  }
+
+  const item = practiceQueue[practiceIndex];
+
+  box.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <button id="prevWordBtn" ${
+        practiceIndex === 0 ? "disabled" : ""
+      } style="padding: 0.5rem 1rem; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        ← Previous
+      </button>
+      <span style="font-weight: bold;">${practiceIndex + 1} / ${
+    practiceQueue.length
+  }</span>
+      <button id="nextWordBtn" style="padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        Next →
+      </button>
+    </div>
+    <p><strong>Translate this:</strong> ${item.text}</p>
+    <details id="answerDetails">
+      <summary>Show Answer</summary>
+      <p>${item.translation}</p>
+      <div id="feedbackButtons" style="margin-top: 10px; display: none;">
+        <button id="knewBtn">✅ I knew it</button>
+        <button id="didntBtn">❌ I didn't know it</button>
+      </div>
+    </details>
+  `;
+
+  document
+    .querySelector("#answerDetails")
+    .addEventListener("toggle", function () {
+      const btns = document.getElementById("feedbackButtons");
+      if (this.open) btns.style.display = "block";
+    });
+
+  // Previous Word button
+  document.getElementById("prevWordBtn").onclick = () => {
+    if (practiceIndex > 0) {
+      practiceIndex--;
+      localStorage.setItem("practiceIndex", practiceIndex);
+      showCurrentPracticeWord();
+    }
+  };
+
+  // Next Word button
+  document.getElementById("nextWordBtn").onclick = () => {
+    practiceIndex++;
+    localStorage.setItem("practiceIndex", practiceIndex);
+    showCurrentPracticeWord();
+  };
+
+  // Feedback buttons - show popup message and auto-advance
+  document.getElementById("knewBtn").onclick = () => {
+    const messages = [
+      "🎉 Excellent! You're doing great!",
+      "🌟 Fantastic! Keep up the good work!",
+      "💪 Amazing! You're mastering this!",
+      "🔥 Outstanding! You're on fire!",
+      "⭐ Brilliant! You're getting stronger!",
+    ];
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+
+    // Show popup message
+    showFeedbackPopup(randomMessage, "success");
+
+    // Auto-advance after 2 seconds
+    setTimeout(() => {
+      practiceIndex++;
+      localStorage.setItem("practiceIndex", practiceIndex);
+      showCurrentPracticeWord();
+    }, 2000);
+  };
+
+  document.getElementById("didntBtn").onclick = () => {
+    const messages = [
+      "💪 Don't worry! Every expert was once a beginner. Keep practicing!",
+      "🌟 That's okay! Mistakes are how we learn. You've got this!",
+      "🚀 No problem! Each attempt makes you stronger. Keep going!",
+      "⭐ Learning takes time! You're making progress with every try!",
+      "🔥 Every challenge is an opportunity to grow. You're doing great!",
+    ];
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+
+    // Show popup message
+    showFeedbackPopup(randomMessage, "warning");
+
+    // Auto-advance after 2 seconds
+    setTimeout(() => {
+      practiceIndex++;
+      localStorage.setItem("practiceIndex", practiceIndex);
+      showCurrentPracticeWord();
+    }, 2000);
+  };
+}
+
+// Make functions available globally for practice.js
+window.startPracticeAllWords = startPracticeAllWords;
+window.resetPractice = resetPractice;
 
 document.getElementById("translateBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
@@ -242,69 +436,24 @@ document.getElementById("favBtn").addEventListener("click", () => {
 
 document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   if (!localStorage.getItem("practiceStarted")) {
+    // First time starting practice
     localStorage.setItem("practiceStarted", "true");
     practiceIndex = 0;
     localStorage.setItem("practiceIndex", "0");
-    practiceQueue = buildPracticeQueue();
-    updatePracticeButton();
-  } else {
+    // Use the queue that's already in localStorage (could be all favorites or just due items)
     practiceQueue = JSON.parse(localStorage.getItem("practiceQueue")) || [];
-    practiceIndex = parseInt(localStorage.getItem("practiceIndex")) || 0;
-    practiceIndex++;
-    localStorage.setItem("practiceIndex", practiceIndex);
-  }
-
-  const box = document.getElementById("practiceArea");
-  box.classList.remove("hidden");
-
-  if (practiceQueue.length === 0) {
-    box.innerHTML = `<p>No words due for practice.</p>`;
-    return;
-  }
-
-  if (practiceIndex >= practiceQueue.length) {
+    // Hide the "Start Practice" button after first click
     document.getElementById("nextPracticeBtn").style.display = "none";
-    box.innerHTML = `
-      <p>🎉 Well done! You practiced all words.</p>
-      <button id="restartBtn">🔁 Restart Practice</button>
-    `;
-    document.getElementById("restartBtn").onclick = () => {
-      resetPractice();
-      setTimeout(() => document.getElementById("nextPracticeBtn").click(), 100);
-    };
-    return;
+
+    // Show the first word (index 0)
+    showCurrentPracticeWord();
+  } else {
+    // This should not happen since the button is hidden during practice
+    // The "Next Word" functionality is handled by the button inside showCurrentPracticeWord()
+    console.warn(
+      "Start Practice button clicked during active practice session"
+    );
   }
-
-  const item = practiceQueue[practiceIndex];
-
-  box.innerHTML = `
-    <p><strong>Translate this:</strong> ${item.text}</p>
-    <details id="answerDetails">
-      <summary>Show Answer</summary>
-      <p>${item.translation}</p>
-      <div id="feedbackButtons" style="margin-top: 10px; display: none;">
-        <button id="knewBtn">✅ I knew it</button>
-        <button id="didntBtn">❌ I didn't</button>
-      </div>
-    </details>
-  `;
-
-  document
-    .querySelector("#answerDetails")
-    .addEventListener("toggle", function () {
-      const btns = document.getElementById("feedbackButtons");
-      if (this.open) btns.style.display = "block";
-    });
-
-  document.getElementById("knewBtn").onclick = () => {
-    scheduleReview(item, true);
-    setTimeout(() => document.getElementById("nextPracticeBtn").click(), 500);
-  };
-
-  document.getElementById("didntBtn").onclick = () => {
-    scheduleReview(item, false);
-    setTimeout(() => document.getElementById("nextPracticeBtn").click(), 500);
-  };
 });
 
 document.getElementById("themeToggle").addEventListener("click", () => {
@@ -351,14 +500,6 @@ confirmBtn?.addEventListener("click", () => {
 cancelBtn?.addEventListener("click", () => {
   modal.classList.add("hidden");
 });
-
-// This is now handled in the DOMContentLoaded event above
-// window.addEventListener("DOMContentLoaded", () => {
-//   const savedTheme = localStorage.getItem("theme") || "light";
-//   document.documentElement.setAttribute("data-theme", savedTheme);
-//   renderFavorites();
-//   updatePracticeButton();
-// });
 
 document.addEventListener("mouseup", async () => {
   const selected = window.getSelection().toString().trim();
