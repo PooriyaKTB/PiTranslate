@@ -200,9 +200,12 @@ function showCurrentPracticeWord() {
 
   // Check if we've completed all items in the queue
   if (practiceIndex >= practiceQueue.length) {
-    showPracticeCompletionOptions();
-    localStorage.removeItem("practiceStarted");
-    localStorage.removeItem("practiceIndex");
+    // Small delay to ensure all scheduling operations are complete
+    setTimeout(() => {
+      showPracticeCompletionOptions();
+      localStorage.removeItem("practiceStarted");
+      localStorage.removeItem("practiceIndex");
+    }, 100);
     return;
   }
 
@@ -258,6 +261,18 @@ function showCurrentPracticeWord() {
 
   // Feedback buttons - show popup message and auto-advance
   document.getElementById("knewBtn").onclick = () => {
+    // Disable both feedback buttons to prevent multiple clicks
+    document.getElementById("knewBtn").disabled = true;
+    document.getElementById("didntBtn").disabled = true;
+
+    // Only schedule review if this is the first time practicing or if timer was reset
+    const isFirstTime = !getLastPracticeDate();
+    const timerWasReset = localStorage.getItem("timerWasReset") === "true";
+
+    if (isFirstTime || timerWasReset) {
+      scheduleReview(item, true);
+    }
+
     const messages = [
       "🎉 Excellent! You're doing great!",
       "🌟 Fantastic! Keep up the good work!",
@@ -279,6 +294,18 @@ function showCurrentPracticeWord() {
   };
 
   document.getElementById("didntBtn").onclick = () => {
+    // Disable both feedback buttons to prevent multiple clicks
+    document.getElementById("knewBtn").disabled = true;
+    document.getElementById("didntBtn").disabled = true;
+
+    // Only schedule review if this is the first time practicing or if timer was reset
+    const isFirstTime = !getLastPracticeDate();
+    const timerWasReset = localStorage.getItem("timerWasReset") === "true";
+
+    if (isFirstTime || timerWasReset) {
+      scheduleReview(item, false);
+    }
+
     const messages = [
       "💪 Don't worry! Every expert was once a beginner. Keep practicing!",
       "🌟 That's okay! Mistakes are how we learn. You've got this!",

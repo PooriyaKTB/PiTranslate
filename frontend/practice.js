@@ -100,6 +100,7 @@ export function getLastPracticeDate() {
 
 export function showPracticeCompletionOptions() {
   const box = document.getElementById("practiceArea");
+  // Reload favorites to get the most current data with updated review schedules
   const allFavorites = getAllFavorites();
 
   // Make practice area visible
@@ -108,6 +109,9 @@ export function showPracticeCompletionOptions() {
   // Set the last practice date (update it every time practice is completed)
   setLastPracticeDate();
 
+  // Clear the timer reset flag after practice completion
+  localStorage.removeItem("timerWasReset");
+
   // Get last practice date for display
   const lastPracticeDate = getLastPracticeDate();
   const lastPracticeText = lastPracticeDate
@@ -115,9 +119,10 @@ export function showPracticeCompletionOptions() {
     : "";
 
   // Find the next scheduled review time
-  const nextReview = allFavorites
-    .filter((item) => item.nextReview)
-    .sort((a, b) => new Date(a.nextReview) - new Date(b.nextReview))[0];
+  const itemsWithReviews = allFavorites.filter((item) => item.nextReview);
+  const nextReview = itemsWithReviews.sort(
+    (a, b) => new Date(a.nextReview) - new Date(b.nextReview)
+  )[0];
 
   const nextReviewText = nextReview
     ? `Next scheduled practice: ${new Date(
@@ -158,6 +163,9 @@ export function showPracticeCompletionOptions() {
   // Handle reset timer
   document.getElementById("resetTimerBtn").onclick = () => {
     resetPracticeTimer();
+    // Set flag to indicate timer was reset - this will allow scheduling in the next practice session
+    localStorage.setItem("timerWasReset", "true");
+
     // Show confirmation message
     const box = document.getElementById("practiceArea");
     box.innerHTML = `
