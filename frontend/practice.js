@@ -105,10 +105,8 @@ export function showPracticeCompletionOptions() {
   // Make practice area visible
   box.classList.remove("hidden");
 
-  // Set the last practice date (only if not already set)
-  if (!getLastPracticeDate()) {
-    setLastPracticeDate();
-  }
+  // Set the last practice date (update it every time practice is completed)
+  setLastPracticeDate();
 
   // Get last practice date for display
   const lastPracticeDate = getLastPracticeDate();
