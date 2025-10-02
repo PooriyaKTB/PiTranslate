@@ -453,3 +453,36 @@ input:-webkit-autofill {
     padding: 20px 16px;
   }
 }
+
+/* === Voice Input Button States === */
+#voiceInputBtn {
+  transition: all 0.3s ease;
+}
+
+#voiceInputBtn.listening {
+  background: #ff4444;
+  color: white;
+  animation: pulse 1.5s infinite;
+}
+
+#voiceInputBtn.processing {
+  background: #ffa500;
+  color: white;
+}
+
+#voiceInputBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

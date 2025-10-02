@@ -544,6 +544,90 @@ document.getElementById("speakBtn").addEventListener("click", () => {
   speechSynthesis.speak(utterance);
 });
 
+// Voice Input functionality
+let recognition = null;
+let isListening = false;
+
+// Check for Web Speech API support
+if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => {
+    isListening = true;
+    const btn = document.getElementById("voiceInputBtn");
+    btn.textContent = "🎙 Listening...";
+    btn.classList.add("listening");
+    btn.disabled = true;
+  };
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    const inputTextElement = document.getElementById("inputText");
+
+    // Clear previous outputs (reuse existing logic)
+    document.getElementById("output").textContent = "";
+    document.getElementById("output").classList.add("hidden");
+    document.getElementById("highlightTranslation").innerHTML = "";
+    document.getElementById("highlightTranslation").classList.add("hidden");
+    document.getElementById("extraDetails").innerHTML = "";
+    document.getElementById("extraDetails").classList.add("hidden");
+    document.getElementById("idiomOutput").innerHTML = "";
+    document.getElementById("idiomOutput").classList.add("hidden");
+
+    // Place transcript into input text
+    inputTextElement.value = transcript;
+
+    // Trigger input event to clear outputs (reuse existing debounced logic)
+    inputTextElement.dispatchEvent(new Event("input"));
+  };
+
+  recognition.onerror = (event) => {
+    console.error("Speech recognition error:", event.error);
+    showFeedbackPopup(`Voice input error: ${event.error}`, "warning");
+    resetVoiceButton();
+  };
+
+  recognition.onend = () => {
+    isListening = false;
+    resetVoiceButton();
+  };
+
+  function resetVoiceButton() {
+    const btn = document.getElementById("voiceInputBtn");
+    btn.textContent = "🎙 Voice Input";
+    btn.classList.remove("listening", "processing");
+    btn.disabled = false;
+  }
+
+  document.getElementById("voiceInputBtn").addEventListener("click", () => {
+    if (!isListening) {
+      // Set recognition language from target language
+      const targetLang = document.getElementById("targetLang").value;
+      recognition.lang = targetLang;
+
+      try {
+        recognition.start();
+      } catch (error) {
+        console.error("Failed to start recognition:", error);
+        showFeedbackPopup(
+          "Failed to start voice input. Please try again.",
+          "warning"
+        );
+        resetVoiceButton();
+      }
+    }
+  });
+} else {
+  // Hide voice input button if not supported
+  document.getElementById("voiceInputBtn").style.display = "none";
+}
+
 document.getElementById("detailsBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
   const targetLang = document.getElementById("targetLang").value;
