@@ -142,6 +142,10 @@ onAuthStateChanged(auth, (user) => {
 let practiceQueue = [];
 let practiceIndex = 0;
 
+// Practice race condition prevention
+let practiceInTransition = false;
+let practiceAdvanceTimerId = null;
+
 window.removeFavoriteAndRender = (id) => {
   removeFavorite(id);
   renderFavorites();
@@ -292,6 +296,13 @@ function showCurrentPracticeWord() {
 
   box.innerHTML = ""; // Clear existing content
 
+  // Reset transition state when showing a new word
+  practiceInTransition = false;
+  if (practiceAdvanceTimerId) {
+    clearTimeout(practiceAdvanceTimerId);
+    practiceAdvanceTimerId = null;
+  }
+
   // Create navigation container
   const navDiv = document.createElement("div");
   navDiv.style.cssText =
@@ -370,6 +381,7 @@ function showCurrentPracticeWord() {
 
   // Previous Word button
   document.getElementById("prevWordBtn").onclick = () => {
+    if (practiceInTransition) return;
     if (practiceIndex > 0) {
       practiceIndex--;
       localStorage.setItem("practiceIndex", practiceIndex);
@@ -379,6 +391,7 @@ function showCurrentPracticeWord() {
 
   // Next Word button
   document.getElementById("nextWordBtn").onclick = () => {
+    if (practiceInTransition) return;
     practiceIndex++;
     localStorage.setItem("practiceIndex", practiceIndex);
     showCurrentPracticeWord();
@@ -386,9 +399,18 @@ function showCurrentPracticeWord() {
 
   // Feedback buttons - show popup message and auto-advance
   document.getElementById("knewBtn").onclick = () => {
+    if (practiceInTransition) return;
+    practiceInTransition = true;
+
     // Disable both feedback buttons to prevent multiple clicks
     document.getElementById("knewBtn").disabled = true;
     document.getElementById("didntBtn").disabled = true;
+
+    // Clear any previous timer
+    if (practiceAdvanceTimerId) {
+      clearTimeout(practiceAdvanceTimerId);
+      practiceAdvanceTimerId = null;
+    }
 
     // Only schedule review if this is the first time practicing, timer was reset, or item is due
     const isFirstTime = !getLastPracticeDate();
@@ -415,17 +437,28 @@ function showCurrentPracticeWord() {
     showFeedbackPopup(randomMessage, "success");
 
     // Auto-advance after 2 seconds
-    setTimeout(() => {
+    practiceAdvanceTimerId = setTimeout(() => {
       practiceIndex++;
       localStorage.setItem("practiceIndex", practiceIndex);
+      practiceInTransition = false;
+      practiceAdvanceTimerId = null;
       showCurrentPracticeWord();
     }, 2000);
   };
 
   document.getElementById("didntBtn").onclick = () => {
+    if (practiceInTransition) return;
+    practiceInTransition = true;
+
     // Disable both feedback buttons to prevent multiple clicks
     document.getElementById("knewBtn").disabled = true;
     document.getElementById("didntBtn").disabled = true;
+
+    // Clear any previous timer
+    if (practiceAdvanceTimerId) {
+      clearTimeout(practiceAdvanceTimerId);
+      practiceAdvanceTimerId = null;
+    }
 
     // Only schedule review if this is the first time practicing, timer was reset, or item is due
     const isFirstTime = !getLastPracticeDate();
@@ -452,9 +485,11 @@ function showCurrentPracticeWord() {
     showFeedbackPopup(randomMessage, "warning");
 
     // Auto-advance after 2 seconds
-    setTimeout(() => {
+    practiceAdvanceTimerId = setTimeout(() => {
       practiceIndex++;
       localStorage.setItem("practiceIndex", practiceIndex);
+      practiceInTransition = false;
+      practiceAdvanceTimerId = null;
       showCurrentPracticeWord();
     }, 2000);
   };

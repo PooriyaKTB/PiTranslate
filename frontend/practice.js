@@ -89,6 +89,18 @@ export function scheduleReview(item, knewIt) {
   }
 
   saveFavorites(favorites);
+
+  // Rebuild practice queue to reflect updated review schedules
+  const currentQueue = JSON.parse(
+    localStorage.getItem("practiceQueue") || "[]"
+  );
+  const updatedQueue = currentQueue.map((queueItem) => {
+    if (queueItem.id === item.id) {
+      return favorites[index]; // Use the updated item from favorites
+    }
+    return queueItem;
+  });
+  localStorage.setItem("practiceQueue", JSON.stringify(updatedQueue));
 }
 
 export function resetPracticeTimer() {
