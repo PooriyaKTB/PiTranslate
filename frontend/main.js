@@ -482,6 +482,10 @@ function clearOutputsNow() {
     // Hide the container
     el.classList.add("hidden");
   });
+
+  // Hide pronunciation check when outputs are cleared
+  const pronunciationCheck = document.getElementById("pronunciationCheck");
+  pronunciationCheck.style.display = "none";
 }
 
 // Add input listener to clear outputs when user types
@@ -525,6 +529,10 @@ document.getElementById("translateBtn").addEventListener("click", async () => {
   const outputElement = document.getElementById("output");
   outputElement.textContent = data.translation || "Translation failed";
   outputElement.classList.remove("hidden");
+
+  // Show pronunciation check button after translation
+  const pronunciationCheck = document.getElementById("pronunciationCheck");
+  pronunciationCheck.style.display = "block";
 });
 
 let availableVoices = [];
@@ -626,6 +634,152 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
 } else {
   // Hide voice input button if not supported
   document.getElementById("voiceInputBtn").style.display = "none";
+}
+
+// Pronunciation check functionality
+function calculateSimilarity(str1, str2) {
+  // Normalize strings: lowercase, remove punctuation, trim whitespace
+  const normalize = (str) =>
+    str
+      .toLowerCase()
+      .replace(/[^\w\s]/g, "")
+      .trim();
+  const s1 = normalize(str1);
+  const s2 = normalize(str2);
+
+  if (s1 === s2) return 1.0;
+  if (s1.length === 0 || s2.length === 0) return 0.0;
+
+  // Calculate Levenshtein distance
+  const matrix = [];
+  for (let i = 0; i <= s2.length; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= s1.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= s2.length; i++) {
+    for (let j = 1; j <= s1.length; j++) {
+      if (s2.charAt(i - 1) === s1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          matrix[i][j - 1] + 1, // insertion
+          matrix[i - 1][j] + 1 // deletion
+        );
+      }
+    }
+  }
+
+  const distance = matrix[s2.length][s1.length];
+  const maxLength = Math.max(s1.length, s2.length);
+  return 1 - distance / maxLength;
+}
+
+function getSimilarityScore(similarity) {
+  if (similarity >= 0.85) {
+    return {
+      level: "excellent",
+      text: `Excellent! (${Math.round(similarity * 100)}%)`,
+    };
+  } else if (similarity >= 0.7) {
+    return { level: "good", text: `Good! (${Math.round(similarity * 100)}%)` };
+  } else {
+    return {
+      level: "needs-practice",
+      text: `Needs practice (${Math.round(similarity * 100)}%)`,
+    };
+  }
+}
+
+// Pronunciation check button functionality
+let pronunciationRecognition = null;
+let isCheckingPronunciation = false;
+
+// Initialize pronunciation recognition if supported
+if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+  pronunciationRecognition = new SpeechRecognition();
+
+  pronunciationRecognition.continuous = false;
+  pronunciationRecognition.interimResults = false;
+  pronunciationRecognition.maxAlternatives = 1;
+
+  pronunciationRecognition.onstart = () => {
+    isCheckingPronunciation = true;
+    const btn = document.getElementById("pronunciationBtn");
+    btn.textContent = "🎤 Listening...";
+    btn.classList.add("listening");
+    btn.disabled = true;
+  };
+
+  pronunciationRecognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    const targetText = document.getElementById("output").textContent;
+
+    // Calculate similarity
+    const similarity = calculateSimilarity(transcript, targetText);
+    const score = getSimilarityScore(similarity);
+
+    // Display result
+    const resultElement = document.getElementById("pronunciationResult");
+    resultElement.textContent = `You said: "${transcript}" | ${score.text}`;
+    resultElement.className = `pronunciation-result ${score.level}`;
+  };
+
+  pronunciationRecognition.onerror = (event) => {
+    console.error("Pronunciation check error:", event.error);
+    showFeedbackPopup(`Pronunciation check error: ${event.error}`, "warning");
+    resetPronunciationButton();
+  };
+
+  pronunciationRecognition.onend = () => {
+    isCheckingPronunciation = false;
+    resetPronunciationButton();
+  };
+
+  function resetPronunciationButton() {
+    const btn = document.getElementById("pronunciationBtn");
+    btn.textContent = "🎤 Check Pronunciation";
+    btn.classList.remove("listening");
+    btn.disabled = false;
+  }
+
+  document.getElementById("pronunciationBtn").addEventListener("click", () => {
+    if (!isCheckingPronunciation) {
+      const targetText = document.getElementById("output").textContent;
+      if (!targetText || targetText === "Translation failed") {
+        showFeedbackPopup("Please translate some text first!", "warning");
+        return;
+      }
+
+      // Set recognition language from target language
+      const targetLang = document.getElementById("targetLang").value;
+      pronunciationRecognition.lang = targetLang;
+
+      // Clear previous result
+      const resultElement = document.getElementById("pronunciationResult");
+      resultElement.textContent = "";
+      resultElement.className = "";
+
+      try {
+        pronunciationRecognition.start();
+      } catch (error) {
+        console.error("Failed to start pronunciation check:", error);
+        showFeedbackPopup(
+          "Failed to start pronunciation check. Please try again.",
+          "warning"
+        );
+        resetPronunciationButton();
+      }
+    }
+  });
+} else {
+  // Hide pronunciation check if not supported
+  document.getElementById("pronunciationCheck").style.display = "none";
 }
 
 document.getElementById("detailsBtn").addEventListener("click", async () => {

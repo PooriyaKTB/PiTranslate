@@ -486,3 +486,53 @@ input:-webkit-autofill {
     transform: scale(1);
   }
 }
+
+/* === Pronunciation Check Button === */
+#pronunciationBtn {
+  transition: all 0.3s ease;
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+#pronunciationBtn:hover {
+  background: #218838;
+}
+
+#pronunciationBtn.listening {
+  background: #ff4444;
+  animation: pulse 1.5s infinite;
+}
+
+#pronunciationBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+#pronunciationResult {
+  padding: 8px 12px;
+  border-radius: 6px;
+  text-align: center;
+}
+
+#pronunciationResult.excellent {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+#pronunciationResult.good {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+#pronunciationResult.needs-practice {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
