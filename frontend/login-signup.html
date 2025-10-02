@@ -1,19 +1,35 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Login / Sign Up - PiTranslate</title>
     <link rel="stylesheet" href="style.css" />
     <script type="module" src="login-signup.js"></script>
   </head>
   <body>
-    <section class="box">
-      <h2>Login / Sign Up</h2>
-      <input type="email" id="email" placeholder="Email" />
-      <input type="password" id="password" placeholder="Password" />
-      <button id="submitBtn">Continue</button>
-      <button id="googleBtn">Continue with Google</button>
-      <p id="error"></p>
-      <button class="back-btn" onclick="window.location.href='index.html'">← Back to Home</button>
-    </section>
+    <div class="auth-card">
+      <h2 class="auth-title">Login / Sign Up</h2>
+
+      <div class="auth-fields">
+        <label for="email" class="auth-label">Email</label>
+        <input type="email" id="email" placeholder="Email" />
+
+        <label for="password" class="auth-label">Password</label>
+        <input type="password" id="password" placeholder="Password" />
+      </div>
+
+      <div class="auth-actions">
+        <button id="submitBtn" class="btn btn-primary">Continue</button>
+        <button id="googleBtn" class="btn btn-google">
+          Continue with Google
+        </button>
+      </div>
+
+      <p id="error" class="auth-error"></p>
+
+      <button class="back-home" onclick="window.location.href='index.html'">
+        ← Back to Home
+      </button>
+    </div>
   </body>
 </html>

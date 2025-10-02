@@ -4,6 +4,10 @@
   --box: #f0f0f0;
   --btn: #007bff;
   --btn-text: white;
+  --container: 960px; /* desktop max width */
+  --container-md: 720px; /* tablet */
+  --radius: 12px;
+  --gap: 12px;
 }
 [data-theme="dark"] {
   --bg: #121212;
@@ -12,7 +16,6 @@
   --btn: #00bcd4;
   --btn-text: #000;
 }
-
 
 /* === Compact input area === */
 #inputText {
@@ -58,12 +61,32 @@
   }
 }
 
+/* Global responsive defaults */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+/* 
+html,
+body {
+  width: 100%;
+  overflow-x: hidden;
+} */
+
+.page-wrap {
+  /* a generic container */
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
   font-family: "Segoe UI", sans-serif;
   margin: 1rem 10rem;
-  
 }
 header {
   display: flex;
@@ -80,7 +103,6 @@ select {
   color: var(--text);
   border: none;
   border-radius: 8px;
-  
 }
 .btn-group {
   display: flex;
@@ -191,4 +213,243 @@ button:active {
   gap: 0.5rem;
   margin-bottom: 1rem;
   flex-wrap: wrap;
+}
+
+/* === Auth Card Styling === */
+.auth-card {
+  max-width: 450px;
+  margin: 48px auto;
+  padding: 28px 24px;
+  border-radius: 16px;
+  background: var(--box);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+}
+
+.auth-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  text-align: center;
+  margin: 0 0 20px;
+  color: var(--text);
+}
+
+.auth-label {
+  display: block;
+  margin: 10px 2px 6px;
+  font-size: 0.95rem;
+  opacity: 0.85;
+  color: var(--text);
+}
+
+#email,
+#password {
+  width: 100%;
+  max-width: 95%;
+  height: 42px;
+  padding: 0 12px;
+  font-size: 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  margin-bottom: 8px;
+}
+
+#email:focus,
+#password:focus {
+  border-color: #2f6feb;
+  box-shadow: 0 0 0 3px rgba(47, 111, 235, 0.2);
+}
+
+/* Autofill fix */
+input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg) inset;
+  -webkit-text-fill-color: var(--text);
+  transition: background-color 9999s ease-out 0s;
+}
+
+.auth-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn {
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 0.06s ease, box-shadow 0.2s;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: #1677ff;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 16px rgba(22, 119, 255, 0.35);
+}
+
+.btn-google {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.btn-google:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.back-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 22px auto 0;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(0, 0, 0, 0.25);
+  background: transparent;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.back-home:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.auth-error {
+  margin-top: 10px;
+  color: #c62828;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 520px) {
+  .auth-card {
+    margin: 24px 12px;
+    padding: 20px 16px;
+  }
+
+  .auth-actions {
+    gap: 8px;
+  }
+
+  #email,
+  #password {
+    height: 40px;
+  }
+
+  .btn {
+    height: 40px;
+  }
+}
+
+/* === Mobile Responsiveness === */
+
+/* Forms & controls become flexible */
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  justify-content: center;
+}
+.actions-row > * {
+  flex: 0 1 auto;
+}
+
+/* Practice controls */
+.practice-controls {
+  display: flex;
+  gap: var(--gap);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.practice-controls button {
+  min-width: 120px;
+  height: 40px;
+}
+
+/* Word/answer boxes adapt */
+.practice-card {
+  max-width: var(--container-md);
+  margin: 0 auto;
+  padding: 12px;
+  border-radius: var(--radius);
+}
+
+/* Favorites: avoid clutter on mobile */
+.favorites-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--gap);
+}
+.favorite-item {
+  padding: 10px;
+  border-radius: var(--radius);
+}
+
+/* Auth (login-signup) tidy on small screens */
+.auth-fields {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.auth-fields > * {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+/* Small screens */
+@media (max-width: 768px) {
+  .page-wrap {
+    max-width: var(--container-md);
+  }
+  #inputText {
+    max-width: 100%;
+    min-height: 120px;
+  }
+  #targetLang {
+    width: 100%;
+    max-width: 100%;
+    height: 40px;
+  }
+  body {
+    margin: 1rem 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .actions-row {
+    gap: 10px;
+  }
+  .actions-row > * {
+    flex: 1 1 100%;
+  } /* buttons full-width */
+  #targetLang {
+    height: 38px;
+  }
+  .practice-controls button {
+    flex: 1 1 48%;
+    min-width: 0;
+  } /* two per row */
+  body {
+    margin: 1rem 1rem;
+  }
+  .auth-card {
+    margin: 24px 12px;
+    padding: 20px 16px;
+  }
 }

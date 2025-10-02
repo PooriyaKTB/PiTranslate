@@ -2,79 +2,82 @@
 <html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PiTranslate</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <header>
-      <h1>🌍 PiTranslate</h1>
-      <button id="themeToggle">🌓 Toggle Theme</button>
-    </header>
+    <div class="page-wrap">
+      <header>
+        <h1>🌍 PiTranslate</h1>
+        <button id="themeToggle">🌓 Toggle Theme</button>
+      </header>
 
-    <div id="userInfo" style="margin-bottom: 1rem">
-      <p id="userWelcome">Loading...</p>
-      <button id="logoutBtn" style="display: none">Logout</button>
-    </div>
-    <div id="authLinks" style="display: none">
-      <a href="login-signup.html">Login / Sign Up</a>
-    </div>
-
-    <main class="translator">
-      <textarea id="inputText" placeholder="Enter text..."></textarea>
-      <select id="targetLang">
-        <option value="fr-FR">French</option>
-        <option value="de-DE">German</option>
-        <option value="fa-IR">Persian</option>
-        <option value="ar-SA">Arabic</option>
-        <option value="zh-CN">Chinese</option>
-        <option value="ja-JP">Japanese</option>
-        <option value="es-ES">Spanish</option>
-        <option value="ru-RU">Russian</option>
-        <option value="en-GB">English (UK)</option>
-        <option value="en-US">English (US)</option>
-      </select>
-      <div class="btn-group">
-        <button id="translateBtn">Translate</button>
-        <button id="speakBtn">🔊 Speak</button>
-        <button id="detailsBtn">📚 Details</button>
-        <button id="idiomBtn">💡 Idiom</button>
-        <button id="favBtn">⭐ Favorite</button>
+      <div id="userInfo" style="margin-bottom: 1rem">
+        <p id="userWelcome">Loading...</p>
+        <button id="logoutBtn" style="display: none">Logout</button>
       </div>
-      <div>
-        <p id="output"></p>
-        <div id="highlightTranslation"></div>
-        <div id="extraDetails"></div>
-        <div id="idiomOutput"></div>
+      <div id="authLinks" style="display: none">
+        <a href="login-signup.html">Login / Sign Up</a>
       </div>
-    </main>
 
-    <section>
-      <h3>⭐ Favorites</h3>
-      <ul id="favoritesList"></ul>
-      <button id="clearFavoritesBtn">🗑 Clear All Favorites</button>
-    </section>
+      <main class="translator">
+        <textarea id="inputText" placeholder="Enter text..."></textarea>
+        <select id="targetLang">
+          <option value="fr-FR">French</option>
+          <option value="de-DE">German</option>
+          <option value="fa-IR">Persian</option>
+          <option value="ar-SA">Arabic</option>
+          <option value="zh-CN">Chinese</option>
+          <option value="ja-JP">Japanese</option>
+          <option value="es-ES">Spanish</option>
+          <option value="ru-RU">Russian</option>
+          <option value="en-GB">English (UK)</option>
+          <option value="en-US">English (US)</option>
+        </select>
+        <div class="btn-group actions-row">
+          <button id="translateBtn">Translate</button>
+          <button id="speakBtn">🔊 Speak</button>
+          <button id="detailsBtn">📚 Details</button>
+          <button id="idiomBtn">💡 Idiom</button>
+          <button id="favBtn">⭐ Favorite</button>
+        </div>
+        <div>
+          <p id="output"></p>
+          <div id="highlightTranslation"></div>
+          <div id="extraDetails"></div>
+          <div id="idiomOutput"></div>
+        </div>
+      </main>
 
-    <section>
-      <h3>📚 Spaced Repetition Practice</h3>
-      <p id="dueCount"></p>
-      <div class="practice-buttons">
-        <button id="nextPracticeBtn">▶️ Start Practice</button>
-        <button id="dueWordsBtn">📅 Due Words Only</button>
-      </div>
-      <div id="practiceArea"></div>
-    </section>
+      <section>
+        <h3>⭐ Favorites</h3>
+        <ul id="favoritesList"></ul>
+        <button id="clearFavoritesBtn">🗑 Clear All Favorites</button>
+      </section>
 
-    <!-- Clear Modal -->
-    <div id="clearModal" class="modal hidden">
-      <div class="modal-content">
-        <p>Are you sure you want to clear all favorites?</p>
-        <label
-          ><input type="checkbox" id="skipConfirmCheckbox" /> Don't show this
-          again</label
-        >
-        <div class="modal-actions">
-          <button id="confirmClearBtn">Yes, clear all</button>
-          <button id="cancelClearBtn">Cancel</button>
+      <section>
+        <h3>📚 Spaced Repetition Practice</h3>
+        <p id="dueCount"></p>
+        <div class="practice-buttons">
+          <button id="nextPracticeBtn">▶️ Start Practice</button>
+          <button id="dueWordsBtn">📅 Due Words Only</button>
+        </div>
+        <div id="practiceArea"></div>
+      </section>
+
+      <!-- Clear Modal -->
+      <div id="clearModal" class="modal hidden">
+        <div class="modal-content">
+          <p>Are you sure you want to clear all favorites?</p>
+          <label
+            ><input type="checkbox" id="skipConfirmCheckbox" /> Don't show this
+            again</label
+          >
+          <div class="modal-actions">
+            <button id="confirmClearBtn">Yes, clear all</button>
+            <button id="cancelClearBtn">Cancel</button>
+          </div>
         </div>
       </div>
     </div>
