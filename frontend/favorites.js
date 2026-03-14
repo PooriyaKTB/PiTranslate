@@ -33,7 +33,7 @@ export function removeFavorite(id) {
 export function renderFavorites() {
   const favorites = loadFavorites();
   const list = document.getElementById("favoritesList");
-  list.innerHTML = "";
+  list.replaceChildren();
 
   const clearBtn = document.getElementById("clearFavoritesBtn");
   if (!clearBtn) return;
@@ -47,7 +47,6 @@ export function renderFavorites() {
   favorites.forEach((item) => {
     const li = document.createElement("li");
 
-    // Add text content safely
     li.appendChild(document.createTextNode("📌 "));
 
     const strong = document.createElement("strong");
@@ -56,7 +55,6 @@ export function renderFavorites() {
 
     li.appendChild(document.createTextNode(` → ${item.translation}`));
 
-    // Add remove button safely
     const removeBtn = document.createElement("button");
     removeBtn.textContent = "❌";
     removeBtn.addEventListener("click", () => removeFavoriteAndRender(item.id));

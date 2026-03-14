@@ -4,10 +4,17 @@
   --box: #f0f0f0;
   --btn: #007bff;
   --btn-text: white;
-  --container: 960px; /* desktop max width */
-  --container-md: 720px; /* tablet */
+  --container: 960px;
+  --container-md: 720px;
   --radius: 12px;
   --gap: 12px;
+  --success-bg: #d4edda;
+  --success-text: #155724;
+  --success-border: #c3e6cb;
+  --warning-bg: #fff3cd;
+  --warning-text: #856404;
+  --warning-border: #ffeaa7;
+  --muted: #666;
 }
 [data-theme="dark"] {
   --bg: #121212;
@@ -15,39 +22,42 @@
   --box: #1e1e1e;
   --btn: #00bcd4;
   --btn-text: #000;
+  --success-bg: #1b5e20;
+  --success-text: #c8e6c9;
+  --success-border: #2e7d32;
+  --warning-bg: #4e3600;
+  --warning-text: #ffe0b2;
+  --warning-border: #ef6c00;
+  --muted: #aaa;
 }
 
 /* === Compact input area === */
 #inputText {
-  /* keep responsive width but cap it on wide screens */
   display: block;
   width: 100%;
-  max-width: 1100px; /* <- adjust if you prefer 640/680 */
-  margin-inline: auto; /* center horizontally */
-  min-height: 140px; /* tidy but not tiny */
-  resize: vertical; /* allow vertical resize only */
+  max-width: 1100px;
+  margin-inline: auto;
+  min-height: 140px;
+  resize: vertical;
   line-height: 1.4;
   font-size: 1rem;
   border-radius: 10px;
-  /* optional tighter padding if it's too roomy */
   padding: 10px 12px;
 }
 
 /* === Make target-language select much smaller === */
 #targetLang {
   display: block;
-  width: auto; /* don't stretch full width */
-  max-width: 220px; /* hard cap on wide screens */
-  min-width: 140px; /* don't collapse too tiny */
-  height: 36px; /* compact control height */
-  margin: 8px auto 0; /* center under textarea (adjust if needed) */
-  padding: 0 10px; /* compact horizontal padding */
-  font-size: 0.9rem; /* smaller text */
+  width: auto;
+  max-width: 220px;
+  min-width: 140px;
+  height: 36px;
+  margin: 8px auto 0;
+  padding: 0 10px;
+  font-size: 0.9rem;
   border-radius: 8px;
-  /* keep native look; if you already set appearance elsewhere, do not override */
 }
 
-/* Optional: on very small screens, let them breathe */
 @media (max-width: 480px) {
   #inputText {
     max-width: 100%;
@@ -67,15 +77,8 @@
 *::after {
   box-sizing: border-box;
 }
-/* 
-html,
-body {
-  width: 100%;
-  overflow-x: hidden;
-} */
 
 .page-wrap {
-  /* a generic container */
   width: 100%;
   max-width: var(--container);
   margin-inline: auto;
@@ -86,7 +89,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: "Segoe UI", sans-serif;
-  margin: 1rem 10rem;
+  margin: 1rem 4rem;
 }
 header {
   display: flex;
@@ -187,7 +190,7 @@ button:hover {
   text-align: center;
 }
 
-/*Animate buttons*/
+/* Animate buttons */
 button {
   transition: all 0.2s ease-in-out;
 }
@@ -213,6 +216,122 @@ button:active {
   gap: 0.5rem;
   margin-bottom: 1rem;
   flex-wrap: wrap;
+}
+
+/* === Link styled as button (for index.html) === */
+.btn-link {
+  display: inline-block;
+  padding: 0.6rem 1rem;
+  border: none;
+  background: var(--btn);
+  color: var(--btn-text);
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: all 0.2s ease-in-out;
+}
+.btn-link:hover {
+  opacity: 0.85;
+}
+
+/* === Feedback Popup === */
+.feedback-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-align: center;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 400px;
+  word-wrap: break-word;
+}
+.feedback-popup.success {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid var(--success-border);
+}
+.feedback-popup.warning {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  border: 1px solid var(--warning-border);
+}
+
+/* === Practice Navigation === */
+.practice-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.practice-nav .counter {
+  font-weight: bold;
+}
+.practice-btn-prev,
+.practice-btn-next {
+  padding: 0.5rem 1rem;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.practice-btn-prev {
+  background: #6c757d;
+}
+.practice-btn-next {
+  background: #007bff;
+}
+
+/* === Practice Completion === */
+.practice-completion {
+  text-align: center;
+  padding: 2rem;
+}
+.practice-completion .last-practice {
+  color: var(--success-text);
+  font-weight: bold;
+}
+.practice-completion .next-review {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.practice-btn-start {
+  margin: 0.5rem;
+  padding: 0.8rem 1.5rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.practice-btn-reset {
+  margin: 0.5rem;
+  padding: 0.8rem 1.5rem;
+  background: #ffc107;
+  color: #212529;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.practice-btn-after-reset {
+  margin: 1rem;
+  padding: 0.8rem 1.5rem;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* === Validation error text === */
+.validation-error {
+  color: #c62828;
+  font-weight: 500;
 }
 
 /* === Auth Card Styling === */
@@ -301,6 +420,15 @@ input:-webkit-autofill {
   box-shadow: 0 6px 16px rgba(22, 119, 255, 0.35);
 }
 
+.btn-signup {
+  background: #28a745;
+  color: #fff;
+}
+
+.btn-signup:hover {
+  box-shadow: 0 6px 16px rgba(40, 167, 69, 0.35);
+}
+
 .btn-google {
   background: var(--bg);
   color: var(--text);
@@ -359,7 +487,6 @@ input:-webkit-autofill {
 
 /* === Mobile Responsiveness === */
 
-/* Forms & controls become flexible */
 .actions-row {
   display: flex;
   flex-wrap: wrap;
@@ -382,7 +509,6 @@ input:-webkit-autofill {
   height: 40px;
 }
 
-/* Word/answer boxes adapt */
 .practice-card {
   max-width: var(--container-md);
   margin: 0 auto;
@@ -390,7 +516,7 @@ input:-webkit-autofill {
   border-radius: var(--radius);
 }
 
-/* Favorites: avoid clutter on mobile */
+/* Favorites grid */
 .favorites-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -401,7 +527,7 @@ input:-webkit-autofill {
   border-radius: var(--radius);
 }
 
-/* Auth (login-signup) tidy on small screens */
+/* Auth fields */
 .auth-fields {
   display: flex;
   gap: 10px;
@@ -410,6 +536,13 @@ input:-webkit-autofill {
 .auth-fields > * {
   flex: 1 1 180px;
   min-width: 0;
+}
+
+/* Medium screens */
+@media (max-width: 1200px) {
+  body {
+    margin: 1rem 2rem;
+  }
 }
 
 /* Small screens */
@@ -437,14 +570,14 @@ input:-webkit-autofill {
   }
   .actions-row > * {
     flex: 1 1 100%;
-  } /* buttons full-width */
+  }
   #targetLang {
     height: 38px;
   }
   .practice-controls button {
     flex: 1 1 48%;
     min-width: 0;
-  } /* two per row */
+  }
   body {
     margin: 1rem 1rem;
   }

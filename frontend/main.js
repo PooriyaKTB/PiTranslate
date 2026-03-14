@@ -14,11 +14,28 @@ import {
   resetPracticeTimer,
   setLastPracticeDate,
   getLastPracticeDate,
+  shuffleArray,
 } from "./practice.js";
 
 const API_BASE = "https://pooriya-pitranslate.hosting.codeyourfuture.io/api";
 
-// Centralized API call helper with loading and error handling
+const LANG_NAMES = {
+  "fr-FR": "French",
+  "de-DE": "German",
+  "fa-IR": "Persian",
+  "ar-SA": "Arabic",
+  "zh-CN": "Chinese",
+  "ja-JP": "Japanese",
+  "es-ES": "Spanish",
+  "ru-RU": "Russian",
+  "en-GB": "English",
+  "en-US": "English",
+};
+
+function getLangName(code) {
+  return LANG_NAMES[code] || code;
+}
+
 async function apiCall(
   endpoint,
   payload,
@@ -28,7 +45,6 @@ async function apiCall(
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    // Show loading state
     if (buttonEl) buttonEl.setAttribute("disabled", "true");
     if (spinnerEl) spinnerEl.classList.remove("hidden");
 
@@ -51,13 +67,11 @@ async function apiCall(
     showFeedbackPopup("Request failed. Please try again.", "warning");
     return null;
   } finally {
-    // Restore UI state
     if (buttonEl) buttonEl.removeAttribute("disabled");
     if (spinnerEl) spinnerEl.classList.add("hidden");
   }
 }
 
-// Tiny spinner utility
 function ensureInlineSpinner(afterEl, id) {
   let sp = document.getElementById(id);
   if (!sp) {
@@ -81,12 +95,7 @@ import { firebaseConfig } from "./firebaseConfig.js";
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Wait for DOM to be ready before manipulating elements
 document.addEventListener("DOMContentLoaded", () => {
-  // Hide the detail sections initially, but keep the output visible
-  const detailPart = document.getElementById("output").closest("div");
-
-  // Hide all output sections initially
   const detailSections = [
     "output",
     "highlightTranslation",
@@ -96,26 +105,20 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
   detailSections.forEach((id) => {
     const element = document.getElementById(id);
-    if (element) {
-      element.classList.add("hidden");
-    }
+    if (element) element.classList.add("hidden");
   });
 
-  // Initialize app
   const savedTheme = localStorage.getItem("theme") || "light";
   document.documentElement.setAttribute("data-theme", savedTheme);
   renderFavorites();
 
-  // Check if user has already practiced and show completion page
   const lastPracticeDate = getLastPracticeDate();
   const practiceStarted = localStorage.getItem("practiceStarted");
 
   if (lastPracticeDate && !practiceStarted) {
-    // User has practiced before, show completion page and hide the top button
     showPracticeCompletionOptions();
     document.getElementById("nextPracticeBtn").style.display = "none";
   } else {
-    // First time or no previous practice, show start button
     updatePracticeButton();
   }
 });
@@ -142,7 +145,6 @@ onAuthStateChanged(auth, (user) => {
 let practiceQueue = [];
 let practiceIndex = 0;
 
-// Practice race condition prevention
 let practiceInTransition = false;
 let practiceAdvanceTimerId = null;
 
@@ -155,11 +157,10 @@ window.removeFavoriteAndRender = (id) => {
 
 function buildPracticeQueue() {
   const allFavorites = getAllFavorites();
-  // Randomize the queue each time
-  const shuffledFavorites = [...allFavorites].sort(() => Math.random() - 0.5);
-  localStorage.setItem("practiceQueue", JSON.stringify(shuffledFavorites));
+  const shuffled = shuffleArray([...allFavorites]);
+  localStorage.setItem("practiceQueue", JSON.stringify(shuffled));
   updatePracticeButton();
-  return shuffledFavorites;
+  return shuffled;
 }
 
 function resetPractice() {
@@ -173,7 +174,7 @@ function resetPractice() {
   localStorage.removeItem("practiceStarted");
   localStorage.removeItem("practiceIndex");
   localStorage.removeItem("practiceQueue");
-  document.getElementById("practiceArea").innerHTML = "";
+  document.getElementById("practiceArea").replaceChildren();
   practiceQueue = buildPracticeQueue();
   updatePracticeButton();
   document.getElementById("nextPracticeBtn").textContent = "Start Practice";
@@ -182,17 +183,14 @@ function resetPractice() {
 
 function startPracticeAllWords() {
   const allFavorites = loadFavorites();
-  // Randomize the queue each time
-  const shuffledFavorites = [...allFavorites].sort(() => Math.random() - 0.5);
-  localStorage.setItem("practiceQueue", JSON.stringify(shuffledFavorites));
+  const shuffled = shuffleArray([...allFavorites]);
+  localStorage.setItem("practiceQueue", JSON.stringify(shuffled));
   localStorage.setItem("practiceIndex", "0");
   localStorage.setItem("practiceStarted", "true");
-  // Hide the practice area initially, it will be shown when practice starts
   document.getElementById("practiceArea").classList.add("hidden");
   updatePracticeButton();
 
-  // Set up the practice variables and show the first word directly
-  practiceQueue = shuffledFavorites;
+  practiceQueue = shuffled;
   practiceIndex = 0;
   showCurrentPracticeWord();
 }
@@ -201,7 +199,6 @@ function startPracticeDueWords() {
   const dueItems = getDueItems();
 
   if (dueItems.length === 0) {
-    // No due words, show popup notification
     showFeedbackPopup(
       "No due words right now. You can still practice all words.",
       "warning"
@@ -209,81 +206,46 @@ function startPracticeDueWords() {
     return;
   }
 
-  // Randomize the queue each time (same pattern as startPracticeAllWords)
-  const shuffledDueItems = [...dueItems].sort(() => Math.random() - 0.5);
-  localStorage.setItem("practiceQueue", JSON.stringify(shuffledDueItems));
+  const shuffled = shuffleArray([...dueItems]);
+  localStorage.setItem("practiceQueue", JSON.stringify(shuffled));
   localStorage.setItem("practiceIndex", "0");
   localStorage.setItem("practiceStarted", "true");
-  // Hide the practice area initially, it will be shown when practice starts
   document.getElementById("practiceArea").classList.add("hidden");
   updatePracticeButton();
 
-  // Set up the practice variables and show the first word directly
-  practiceQueue = shuffledDueItems;
+  practiceQueue = shuffled;
   practiceIndex = 0;
   showCurrentPracticeWord();
 }
 
-// Function to show feedback popup
 function showFeedbackPopup(message, type) {
-  // Remove any existing popup
   const existingPopup = document.getElementById("feedbackPopup");
-  if (existingPopup) {
-    existingPopup.remove();
-  }
+  if (existingPopup) existingPopup.remove();
 
-  // Create popup
   const popup = document.createElement("div");
   popup.id = "feedbackPopup";
-  popup.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: ${type === "success" ? "#d4edda" : "#fff3cd"};
-    color: ${type === "success" ? "#155724" : "#856404"};
-    border: 1px solid ${type === "success" ? "#c3e6cb" : "#ffeaa7"};
-    border-radius: 8px;
-    padding: 1.5rem 2rem;
-    font-size: 1.1rem;
-    font-weight: bold;
-    text-align: center;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    max-width: 400px;
-    word-wrap: break-word;
-  `;
+  popup.className = `feedback-popup ${type}`;
   popup.textContent = message;
 
   document.body.appendChild(popup);
 
-  // Auto-remove after 2 seconds
   setTimeout(() => {
-    if (popup.parentNode) {
-      popup.remove();
-    }
+    if (popup.parentNode) popup.remove();
   }, 2000);
 }
 
-// Function to show current practice word without changing index
 function showCurrentPracticeWord() {
   const box = document.getElementById("practiceArea");
   box.classList.remove("hidden");
 
-  // Don't rebuild queue here - use the existing queue (could be all favorites or just due items)
-  // practiceQueue = buildPracticeQueue(); // This was overriding the "all favorites" queue!
-
   if (practiceQueue.length === 0) {
-    // Show completion options instead of just "no words" message
     showPracticeCompletionOptions();
     localStorage.removeItem("practiceStarted");
     localStorage.removeItem("practiceIndex");
     return;
   }
 
-  // Check if we've completed all items in the queue
   if (practiceIndex >= practiceQueue.length) {
-    // Small delay to ensure all scheduling operations are complete
     setTimeout(() => {
       showPracticeCompletionOptions();
       localStorage.removeItem("practiceStarted");
@@ -294,48 +256,37 @@ function showCurrentPracticeWord() {
 
   const item = practiceQueue[practiceIndex];
 
-  box.innerHTML = ""; // Clear existing content
+  box.replaceChildren();
 
-  // Reset transition state when showing a new word
   practiceInTransition = false;
   if (practiceAdvanceTimerId) {
     clearTimeout(practiceAdvanceTimerId);
     practiceAdvanceTimerId = null;
   }
 
-  // Create navigation container
   const navDiv = document.createElement("div");
-  navDiv.style.cssText =
-    "display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;";
+  navDiv.className = "practice-nav";
 
-  // Previous button
   const prevBtn = document.createElement("button");
   prevBtn.id = "prevWordBtn";
+  prevBtn.className = "practice-btn-prev";
   prevBtn.textContent = "← Previous";
-  prevBtn.style.cssText =
-    "padding: 0.5rem 1rem; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;";
-  if (practiceIndex === 0) {
-    prevBtn.disabled = true;
-  }
+  if (practiceIndex === 0) prevBtn.disabled = true;
   navDiv.appendChild(prevBtn);
 
-  // Counter span
   const counterSpan = document.createElement("span");
-  counterSpan.style.fontWeight = "bold";
+  counterSpan.className = "counter";
   counterSpan.textContent = `${practiceIndex + 1} / ${practiceQueue.length}`;
   navDiv.appendChild(counterSpan);
 
-  // Next button
   const nextBtn = document.createElement("button");
   nextBtn.id = "nextWordBtn";
+  nextBtn.className = "practice-btn-next";
   nextBtn.textContent = "Next →";
-  nextBtn.style.cssText =
-    "padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;";
   navDiv.appendChild(nextBtn);
 
   box.appendChild(navDiv);
 
-  // Question paragraph
   const questionPara = document.createElement("p");
   const questionStrong = document.createElement("strong");
   questionStrong.textContent = "Translate this: ";
@@ -343,7 +294,6 @@ function showCurrentPracticeWord() {
   questionPara.appendChild(document.createTextNode(item.text));
   box.appendChild(questionPara);
 
-  // Details element
   const details = document.createElement("details");
   details.id = "answerDetails";
 
@@ -379,7 +329,6 @@ function showCurrentPracticeWord() {
       if (this.open) btns.style.display = "block";
     });
 
-  // Previous Word button
   document.getElementById("prevWordBtn").onclick = () => {
     if (practiceInTransition) return;
     if (practiceIndex > 0) {
@@ -389,7 +338,6 @@ function showCurrentPracticeWord() {
     }
   };
 
-  // Next Word button
   document.getElementById("nextWordBtn").onclick = () => {
     if (practiceInTransition) return;
     practiceIndex++;
@@ -397,46 +345,54 @@ function showCurrentPracticeWord() {
     showCurrentPracticeWord();
   };
 
-  // Feedback buttons - show popup message and auto-advance
-  document.getElementById("knewBtn").onclick = () => {
+  function handleFeedback(knewIt) {
     if (practiceInTransition) return;
     practiceInTransition = true;
 
-    // Disable both feedback buttons to prevent multiple clicks
     document.getElementById("knewBtn").disabled = true;
     document.getElementById("didntBtn").disabled = true;
 
-    // Clear any previous timer
     if (practiceAdvanceTimerId) {
       clearTimeout(practiceAdvanceTimerId);
       practiceAdvanceTimerId = null;
     }
 
-    // Only schedule review if this is the first time practicing, timer was reset, or item is due
     const isFirstTime = !getLastPracticeDate();
     const timerWasReset = localStorage.getItem("timerWasReset") === "true";
     const isDue =
       !item.nextReview || new Date(item.nextReview).getTime() <= Date.now();
 
     if (isFirstTime || timerWasReset || isDue) {
-      scheduleReview(item, true);
-      // Immediately refresh due counter so user sees due → 0
+      scheduleReview(item, knewIt);
       updatePracticeButton();
     }
 
-    const messages = [
-      "🎉 Excellent! You're doing great!",
-      "🌟 Fantastic! Keep up the good work!",
-      "💪 Amazing! You're mastering this!",
-      "🔥 Outstanding! You're on fire!",
-      "⭐ Brilliant! You're getting stronger!",
-    ];
-    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+    if (knewIt) {
+      const messages = [
+        "🎉 Excellent! You're doing great!",
+        "🌟 Fantastic! Keep up the good work!",
+        "💪 Amazing! You're mastering this!",
+        "🔥 Outstanding! You're on fire!",
+        "⭐ Brilliant! You're getting stronger!",
+      ];
+      showFeedbackPopup(
+        messages[Math.floor(Math.random() * messages.length)],
+        "success"
+      );
+    } else {
+      const messages = [
+        "💪 Don't worry! Every expert was once a beginner. Keep practicing!",
+        "🌟 That's okay! Mistakes are how we learn. You've got this!",
+        "🚀 No problem! Each attempt makes you stronger. Keep going!",
+        "⭐ Learning takes time! You're making progress with every try!",
+        "🔥 Every challenge is an opportunity to grow. You're doing great!",
+      ];
+      showFeedbackPopup(
+        messages[Math.floor(Math.random() * messages.length)],
+        "warning"
+      );
+    }
 
-    // Show popup message
-    showFeedbackPopup(randomMessage, "success");
-
-    // Auto-advance after 2 seconds
     practiceAdvanceTimerId = setTimeout(() => {
       practiceIndex++;
       localStorage.setItem("practiceIndex", practiceIndex);
@@ -444,66 +400,17 @@ function showCurrentPracticeWord() {
       practiceAdvanceTimerId = null;
       showCurrentPracticeWord();
     }, 2000);
-  };
+  }
 
-  document.getElementById("didntBtn").onclick = () => {
-    if (practiceInTransition) return;
-    practiceInTransition = true;
-
-    // Disable both feedback buttons to prevent multiple clicks
-    document.getElementById("knewBtn").disabled = true;
-    document.getElementById("didntBtn").disabled = true;
-
-    // Clear any previous timer
-    if (practiceAdvanceTimerId) {
-      clearTimeout(practiceAdvanceTimerId);
-      practiceAdvanceTimerId = null;
-    }
-
-    // Only schedule review if this is the first time practicing, timer was reset, or item is due
-    const isFirstTime = !getLastPracticeDate();
-    const timerWasReset = localStorage.getItem("timerWasReset") === "true";
-    const isDue =
-      !item.nextReview || new Date(item.nextReview).getTime() <= Date.now();
-
-    if (isFirstTime || timerWasReset || isDue) {
-      scheduleReview(item, false);
-      // Immediately refresh due counter so user sees due → 0
-      updatePracticeButton();
-    }
-
-    const messages = [
-      "💪 Don't worry! Every expert was once a beginner. Keep practicing!",
-      "🌟 That's okay! Mistakes are how we learn. You've got this!",
-      "🚀 No problem! Each attempt makes you stronger. Keep going!",
-      "⭐ Learning takes time! You're making progress with every try!",
-      "🔥 Every challenge is an opportunity to grow. You're doing great!",
-    ];
-    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-
-    // Show popup message
-    showFeedbackPopup(randomMessage, "warning");
-
-    // Auto-advance after 2 seconds
-    practiceAdvanceTimerId = setTimeout(() => {
-      practiceIndex++;
-      localStorage.setItem("practiceIndex", practiceIndex);
-      practiceInTransition = false;
-      practiceAdvanceTimerId = null;
-      showCurrentPracticeWord();
-    }, 2000);
-  };
+  document.getElementById("knewBtn").onclick = () => handleFeedback(true);
+  document.getElementById("didntBtn").onclick = () => handleFeedback(false);
 }
 
-// Make functions available globally for practice.js
 window.startPracticeAllWords = startPracticeAllWords;
 window.startPracticeDueWords = startPracticeDueWords;
 window.resetPractice = resetPractice;
 
-// Debounced input clearing functionality
 let clearOutputsDebounceId;
-
-// Debounced selection translation functionality
 let selectionDebounceId;
 let lastSelectionText = "";
 
@@ -512,37 +419,40 @@ function clearOutputsNow() {
   ids.forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
-    // Clear content safely
     el.textContent = "";
-    // Hide the container
     el.classList.add("hidden");
   });
 }
 
-// Add input listener to clear outputs when user types
 document.getElementById("inputText").addEventListener("input", () => {
   clearTimeout(clearOutputsDebounceId);
   clearOutputsDebounceId = setTimeout(clearOutputsNow, 250);
 });
 
+document.getElementById("targetLang").addEventListener("change", () => {
+  lastSelectionText = "";
+});
+
 document.getElementById("translateBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
-  const targetLang = document.getElementById("targetLang").value;
-  document.getElementById("output").textContent = "";
-  document.getElementById("output").classList.add("hidden");
+  const targetLangCode = document.getElementById("targetLang").value;
+  const targetLang = getLangName(targetLangCode);
 
-  document.getElementById("highlightTranslation").innerHTML = "";
+  const outputElement = document.getElementById("output");
+  outputElement.textContent = "";
+  outputElement.classList.add("hidden");
+
+  document.getElementById("highlightTranslation").replaceChildren();
   document.getElementById("highlightTranslation").classList.add("hidden");
 
-  document.getElementById("extraDetails").innerHTML = "";
+  document.getElementById("extraDetails").replaceChildren();
   document.getElementById("extraDetails").classList.add("hidden");
 
-  document.getElementById("idiomOutput").innerHTML = "";
+  document.getElementById("idiomOutput").replaceChildren();
   document.getElementById("idiomOutput").classList.add("hidden");
 
   if (!inputText.trim()) {
-    const outputElement = document.getElementById("output");
-    outputElement.innerText = "Please enter text to translate.";
+    outputElement.textContent = "Please enter text to translate.";
     outputElement.classList.remove("hidden");
     return;
   }
@@ -555,9 +465,8 @@ document.getElementById("translateBtn").addEventListener("click", async () => {
     { inputText, targetLang },
     { buttonEl: translateBtn, spinnerEl }
   );
-  if (!data) return; // toast already shown
+  if (!data) return;
 
-  const outputElement = document.getElementById("output");
   outputElement.textContent = data.translation || "Translation failed";
   outputElement.classList.remove("hidden");
 });
@@ -570,24 +479,43 @@ speechSynthesis.onvoiceschanged = () => {
 
 document.getElementById("speakBtn").addEventListener("click", () => {
   const text = document.getElementById("output").textContent;
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = document.getElementById("targetLang").value;
+  const invalid = ["", "Please enter text to translate.", "Translation failed"];
 
-  const voice = availableVoices.find((v) => v.lang === utterance.lang);
+  if (invalid.includes(text)) {
+    showFeedbackPopup("Nothing to speak. Translate something first.", "warning");
+    return;
+  }
+
+  const langCode = document.getElementById("targetLang").value;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = langCode;
+
+  const langPrefix = langCode.split("-")[0];
+  const voice =
+    availableVoices.find((v) => v.lang === langCode) ||
+    availableVoices.find((v) => v.lang.startsWith(langPrefix));
   if (voice) utterance.voice = voice;
+
+  utterance.onerror = () => {
+    showFeedbackPopup("Speech synthesis failed for this language.", "warning");
+  };
 
   speechSynthesis.speak(utterance);
 });
 
 document.getElementById("detailsBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
-  const targetLang = document.getElementById("targetLang").value;
+  const targetLangCode = document.getElementById("targetLang").value;
+  const targetLang = getLangName(targetLangCode);
 
   if (!inputText.trim()) {
-    const extraDetailsElement = document.getElementById("extraDetails");
-    extraDetailsElement.innerHTML =
-      "<p style='color: red;'>Please enter a word or phrase first!</p>";
-    extraDetailsElement.classList.remove("hidden");
+    const el = document.getElementById("extraDetails");
+    el.replaceChildren();
+    const p = document.createElement("p");
+    p.className = "validation-error";
+    p.textContent = "Please enter a word or phrase first!";
+    el.appendChild(p);
+    el.classList.remove("hidden");
     return;
   }
 
@@ -599,12 +527,11 @@ document.getElementById("detailsBtn").addEventListener("click", async () => {
     { inputText, targetLang },
     { buttonEl: detailsBtn, spinnerEl }
   );
-  if (!data) return; // toast already shown
+  if (!data) return;
 
   const extraDetailsElement = document.getElementById("extraDetails");
-  extraDetailsElement.innerHTML = ""; // Clear existing content
+  extraDetailsElement.replaceChildren();
 
-  // Create Examples section
   const examplesHeading = document.createElement("h4");
   examplesHeading.textContent = "Examples:";
   extraDetailsElement.appendChild(examplesHeading);
@@ -623,7 +550,6 @@ document.getElementById("detailsBtn").addEventListener("click", async () => {
   }
   extraDetailsElement.appendChild(examplesPara);
 
-  // Create Synonyms section
   const synonymsHeading = document.createElement("h4");
   synonymsHeading.textContent = "Synonyms:";
   extraDetailsElement.appendChild(synonymsHeading);
@@ -646,13 +572,17 @@ document.getElementById("detailsBtn").addEventListener("click", async () => {
 
 document.getElementById("idiomBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
-  const targetLang = document.getElementById("targetLang").value;
+  const targetLangCode = document.getElementById("targetLang").value;
+  const targetLang = getLangName(targetLangCode);
 
   if (!inputText.trim()) {
-    const idiomOutputElement = document.getElementById("idiomOutput");
-    idiomOutputElement.innerHTML =
-      "<p style='color: red;'>Please enter a word or phrase first.</p>";
-    idiomOutputElement.classList.remove("hidden");
+    const el = document.getElementById("idiomOutput");
+    el.replaceChildren();
+    const p = document.createElement("p");
+    p.className = "validation-error";
+    p.textContent = "Please enter a word or phrase first.";
+    el.appendChild(p);
+    el.classList.remove("hidden");
     return;
   }
 
@@ -664,12 +594,11 @@ document.getElementById("idiomBtn").addEventListener("click", async () => {
     { inputText, targetLang, inputLang: "auto" },
     { buttonEl: idiomBtn, spinnerEl }
   );
-  if (!data) return; // toast already shown
+  if (!data) return;
 
   const idiomOutputElement = document.getElementById("idiomOutput");
-  idiomOutputElement.innerHTML = ""; // Clear existing content
+  idiomOutputElement.replaceChildren();
 
-  // Create Idiom section
   const idiomHeading = document.createElement("h4");
   idiomHeading.textContent = "📌 Idiom:";
   idiomOutputElement.appendChild(idiomHeading);
@@ -678,7 +607,6 @@ document.getElementById("idiomBtn").addEventListener("click", async () => {
   idiomPara.textContent = data.idiom || "Not available";
   idiomOutputElement.appendChild(idiomPara);
 
-  // Create Meaning section
   const meaningHeading = document.createElement("h4");
   meaningHeading.textContent = "💬 Meaning:";
   idiomOutputElement.appendChild(meaningHeading);
@@ -687,7 +615,6 @@ document.getElementById("idiomBtn").addEventListener("click", async () => {
   meaningPara.textContent = data.meaning || "Not available";
   idiomOutputElement.appendChild(meaningPara);
 
-  // Create Equivalent section
   const equivalentHeading = document.createElement("h4");
   equivalentHeading.textContent = `🌍 Equivalent in ${targetLang}:`;
   idiomOutputElement.appendChild(equivalentHeading);
@@ -699,9 +626,22 @@ document.getElementById("idiomBtn").addEventListener("click", async () => {
 });
 
 document.getElementById("favBtn").addEventListener("click", () => {
-  const inputText = document.getElementById("inputText").value;
-  const translation = document.getElementById("output").textContent;
-  if (!inputText || !translation) return;
+  const inputText = document.getElementById("inputText").value.trim();
+  const translation = document.getElementById("output").textContent.trim();
+  const invalidValues = [
+    "",
+    "Translation failed",
+    "Please enter text to translate.",
+  ];
+
+  if (!inputText || invalidValues.includes(translation)) {
+    showFeedbackPopup(
+      "Translate something first before adding to favorites.",
+      "warning"
+    );
+    return;
+  }
+
   addFavorite({ text: inputText, translation });
   renderFavorites();
   buildPracticeQueue();
@@ -710,33 +650,18 @@ document.getElementById("favBtn").addEventListener("click", () => {
 
 document.getElementById("nextPracticeBtn").addEventListener("click", () => {
   if (!localStorage.getItem("practiceStarted")) {
-    // First time starting practice
     localStorage.setItem("practiceStarted", "true");
     practiceIndex = 0;
     localStorage.setItem("practiceIndex", "0");
-    // Use the queue that's already in localStorage (could be all favorites or just due items)
     practiceQueue = JSON.parse(localStorage.getItem("practiceQueue")) || [];
-    // Hide the "Start Practice" button after first click
     document.getElementById("nextPracticeBtn").style.display = "none";
-
-    // Show the first word (index 0)
     showCurrentPracticeWord();
-  } else {
-    // This should not happen since the button is hidden during practice
-    // The "Next Word" functionality is handled by the button inside showCurrentPracticeWord()
-    console.warn(
-      "Start Practice button clicked during active practice session"
-    );
   }
 });
 
 document.getElementById("dueWordsBtn").addEventListener("click", () => {
   if (!localStorage.getItem("practiceStarted")) {
-    // Start practice with due words only
     startPracticeDueWords();
-  } else {
-    // This should not happen since the button is hidden during practice
-    console.warn("Due Words button clicked during active practice session");
   }
 });
 
@@ -759,7 +684,7 @@ function clearFavoritesNow() {
   localStorage.removeItem("practiceStarted");
   localStorage.removeItem("practiceQueue");
   renderFavorites();
-  document.getElementById("practiceArea").innerHTML = "";
+  document.getElementById("practiceArea").replaceChildren();
   updatePracticeButton();
   document.getElementById("nextPracticeBtn").textContent = "Start Practice";
   document.getElementById("nextPracticeBtn").style.display = "inline-block";
@@ -787,11 +712,10 @@ cancelBtn?.addEventListener("click", () => {
 
 function handleSelectionTranslate() {
   const selected = window.getSelection().toString().trim();
-  const targetLang = document.getElementById("targetLang").value;
+  const targetLangCode = document.getElementById("targetLang").value;
+  const targetLang = getLangName(targetLangCode);
 
   if (selected.length < 1) return;
-
-  // Optional small optimization: skip if same as last time
   if (selected === lastSelectionText) return;
   lastSelectionText = selected;
 
@@ -800,9 +724,9 @@ function handleSelectionTranslate() {
 
   apiCall("translate", { inputText: selected, targetLang }, { spinnerEl }).then(
     (data) => {
-      if (!data) return; // toast already shown
+      if (!data) return;
 
-      box.innerHTML = ""; // Clear existing content
+      box.replaceChildren();
 
       const para = document.createElement("p");
       const strong = document.createElement("strong");
@@ -819,7 +743,7 @@ function handleSelectionTranslate() {
   );
 }
 
-document.addEventListener("mouseup", () => {
+document.getElementById("inputText").addEventListener("mouseup", () => {
   clearTimeout(selectionDebounceId);
   selectionDebounceId = setTimeout(handleSelectionTranslate, 300);
 });

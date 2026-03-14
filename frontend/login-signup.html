@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="light">
   <head>
+    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Login / Sign Up - PiTranslate</title>
     <link rel="stylesheet" href="style.css" />
@@ -19,7 +20,10 @@
       </div>
 
       <div class="auth-actions">
-        <button id="submitBtn" class="btn btn-primary">Continue</button>
+        <button id="loginBtn" class="btn btn-primary">Login</button>
+        <button id="signupBtn" class="btn btn-signup">Sign Up</button>
+      </div>
+      <div class="auth-actions">
         <button id="googleBtn" class="btn btn-google">
           Continue with Google
         </button>
@@ -27,7 +31,7 @@
 
       <p id="error" class="auth-error"></p>
 
-      <button class="back-home" onclick="window.location.href='index.html'">
+      <button class="back-home" id="backHomeBtn">
         ← Back to Home
       </button>
     </div>

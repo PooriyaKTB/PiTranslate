@@ -1,12 +1,19 @@
 import { loadFavorites, saveFavorites } from "./favorites.js";
 
+// Fisher-Yates shuffle for unbiased randomization
+export function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
 export function getAllFavorites() {
-  // Return all favorites for practice, regardless of review status
   return loadFavorites();
 }
 
 export function getDueItems() {
-  // Return only items that are actually due for review (for scheduling purposes)
   const now = Date.now();
   return loadFavorites().filter((item) => {
     return !item.nextReview || new Date(item.nextReview).getTime() <= now;
@@ -19,11 +26,10 @@ export function updatePracticeButton() {
   const dueCount = document.getElementById("dueCount");
   const queue = JSON.parse(localStorage.getItem("practiceQueue") || "[]");
   const practiceStarted = localStorage.getItem("practiceStarted");
-  const practiceIndex = parseInt(localStorage.getItem("practiceIndex")) || 0;
 
-  // Update due count status line (only show if there are favorites)
   const allFavorites = getAllFavorites();
   const dueItemsCount = getDueItems().length;
+
   if (dueCount) {
     if (allFavorites.length > 0) {
       dueCount.textContent = `✅ ${dueItemsCount} words are due today`;
@@ -36,7 +42,6 @@ export function updatePracticeButton() {
     }
   }
 
-  // Don't show buttons if practice has started (they should be hidden)
   if (practiceStarted) {
     btn.style.display = "none";
     if (dueBtn) dueBtn.style.display = "none";
@@ -44,19 +49,14 @@ export function updatePracticeButton() {
   }
 
   if (!queue.length) {
-    const allFavorites = getAllFavorites(); // All favorites available for practice
     if (allFavorites.length > 0) {
-      // Randomize the queue each time
-      const shuffledFavorites = [...allFavorites].sort(
-        () => Math.random() - 0.5
-      );
-      localStorage.setItem("practiceQueue", JSON.stringify(shuffledFavorites));
+      const shuffled = shuffleArray([...allFavorites]);
+      localStorage.setItem("practiceQueue", JSON.stringify(shuffled));
       btn.style.display = "inline-block";
       btn.textContent = "▶️ Start Practice";
       if (dueBtn) dueBtn.style.display = "inline-block";
       return;
     }
-    // No favorites at all
     btn.style.display = "none";
     if (dueBtn) dueBtn.style.display = "none";
     localStorage.removeItem("practiceStarted");
@@ -90,13 +90,12 @@ export function scheduleReview(item, knewIt) {
 
   saveFavorites(favorites);
 
-  // Rebuild practice queue to reflect updated review schedules
   const currentQueue = JSON.parse(
     localStorage.getItem("practiceQueue") || "[]"
   );
   const updatedQueue = currentQueue.map((queueItem) => {
     if (queueItem.id === item.id) {
-      return favorites[index]; // Use the updated item from favorites
+      return favorites[index];
     }
     return queueItem;
   });
@@ -109,9 +108,7 @@ export function resetPracticeTimer() {
 
   favorites.forEach((favorite) => {
     if (favorite.reviewed > 0) {
-      // Calculate the interval based on current review count
       const interval = Math.pow(2, favorite.reviewed);
-      // Set next review to be the same interval from now
       favorite.nextReview = new Date(
         now.getTime() + interval * 24 * 60 * 60 * 1000
       ).toISOString();
@@ -133,31 +130,24 @@ export function getLastPracticeDate() {
 
 export function showPracticeCompletionOptions() {
   const box = document.getElementById("practiceArea");
-  // Reload favorites to get the most current data with updated review schedules
   const allFavorites = getAllFavorites();
 
-  // Make practice area visible
   box.classList.remove("hidden");
 
-  // Hide practice buttons when showing completion options
   const nextBtn = document.getElementById("nextPracticeBtn");
   const dueBtn = document.getElementById("dueWordsBtn");
   if (nextBtn) nextBtn.style.display = "none";
   if (dueBtn) dueBtn.style.display = "none";
 
-  // Set the last practice date (update it every time practice is completed)
   setLastPracticeDate();
 
-  // Clear the timer reset flag after practice completion
   localStorage.removeItem("timerWasReset");
 
-  // Get last practice date for display
   const lastPracticeDate = getLastPracticeDate();
   const lastPracticeText = lastPracticeDate
     ? `Last practice: ${lastPracticeDate.toLocaleDateString()} at ${lastPracticeDate.toLocaleTimeString()}`
     : "";
 
-  // Find the next scheduled review time (future items only)
   const nowTs = Date.now();
   const futureItems = allFavorites.filter(
     (item) => item.nextReview && new Date(item.nextReview).getTime() > nowTs
@@ -172,94 +162,81 @@ export function showPracticeCompletionOptions() {
       ).toLocaleDateString()}`
     : "No scheduled practice sessions";
 
-  box.innerHTML = ""; // Clear existing content
+  box.replaceChildren();
 
   const containerDiv = document.createElement("div");
-  containerDiv.style.cssText = "text-align: center; padding: 2rem;";
+  containerDiv.className = "practice-completion";
 
-  // Title
   const title = document.createElement("h3");
   title.textContent = "🎉 Practice Complete!";
   containerDiv.appendChild(title);
 
-  // Completion message
   const completionMsg = document.createElement("p");
   completionMsg.textContent = `You've finished practicing all ${allFavorites.length} words!`;
   containerDiv.appendChild(completionMsg);
 
-  // Last practice date (if exists)
   if (lastPracticeText) {
     const lastPracticePara = document.createElement("p");
-    lastPracticePara.style.cssText = "color: #28a745; font-weight: bold;";
+    lastPracticePara.className = "last-practice";
     lastPracticePara.textContent = lastPracticeText;
     containerDiv.appendChild(lastPracticePara);
   }
 
-  // Button container
   const buttonContainer = document.createElement("div");
-  buttonContainer.style.cssText = "margin: 1.5rem 0;";
+  buttonContainer.style.margin = "1.5rem 0";
 
   const startAgainBtn = document.createElement("button");
   startAgainBtn.id = "startAgainBtn";
+  startAgainBtn.className = "practice-btn-start";
   startAgainBtn.textContent = "🔁 Start Practice Again";
-  startAgainBtn.style.cssText =
-    "margin: 0.5rem; padding: 0.8rem 1.5rem; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer;";
   buttonContainer.appendChild(startAgainBtn);
 
   const resetTimerBtn = document.createElement("button");
   resetTimerBtn.id = "resetTimerBtn";
+  resetTimerBtn.className = "practice-btn-reset";
   resetTimerBtn.textContent = "⏰ Reset Next Practice Time";
-  resetTimerBtn.style.cssText =
-    "margin: 0.5rem; padding: 0.8rem 1.5rem; background: #ffc107; color: #212529; border: none; border-radius: 6px; cursor: pointer;";
   buttonContainer.appendChild(resetTimerBtn);
 
   containerDiv.appendChild(buttonContainer);
 
-  // Next review text
   const nextReviewPara = document.createElement("p");
-  nextReviewPara.style.cssText = "color: #666; font-size: 0.9rem;";
+  nextReviewPara.className = "next-review";
   nextReviewPara.textContent = nextReviewText;
   containerDiv.appendChild(nextReviewPara);
 
   box.appendChild(containerDiv);
 
-  // Handle start practice again (no timer change)
   document.getElementById("startAgainBtn").onclick = () => {
     if (window.startPracticeAllWords) {
       window.startPracticeAllWords();
     }
   };
 
-  // Handle reset timer
   document.getElementById("resetTimerBtn").onclick = () => {
     resetPracticeTimer();
-    // Set flag to indicate timer was reset - this will allow scheduling in the next practice session
     localStorage.setItem("timerWasReset", "true");
 
-    // Show confirmation message
-    const box = document.getElementById("practiceArea");
-    box.innerHTML = ""; // Clear existing content
+    box.replaceChildren();
 
-    const containerDiv = document.createElement("div");
-    containerDiv.style.cssText = "text-align: center; padding: 2rem;";
+    const resetContainer = document.createElement("div");
+    resetContainer.className = "practice-completion";
 
-    const title = document.createElement("h3");
-    title.textContent = "⏰ Timer Reset!";
-    containerDiv.appendChild(title);
+    const resetTitle = document.createElement("h3");
+    resetTitle.textContent = "⏰ Timer Reset!";
+    resetContainer.appendChild(resetTitle);
 
     const message = document.createElement("p");
     message.textContent =
       "Next practice times have been reset based on your current progress.";
-    containerDiv.appendChild(message);
+    resetContainer.appendChild(message);
 
     const startBtn = document.createElement("button");
     startBtn.id = "startPracticeAfterReset";
+    startBtn.className = "practice-btn-after-reset";
     startBtn.textContent = "🔁 Start Practice";
-    startBtn.style.cssText =
-      "margin: 1rem; padding: 0.8rem 1.5rem; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer;";
-    containerDiv.appendChild(startBtn);
+    resetContainer.appendChild(startBtn);
 
-    box.appendChild(containerDiv);
+    box.appendChild(resetContainer);
 
     document.getElementById("startPracticeAfterReset").onclick = () => {
       if (window.startPracticeAllWords) {
@@ -268,5 +245,3 @@ export function showPracticeCompletionOptions() {
     };
   };
 }
-
-// Practice button initialization is handled in main.js
