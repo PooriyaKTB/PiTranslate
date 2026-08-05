@@ -11,8 +11,6 @@ import {
   scheduleReview,
   updatePracticeButton,
   showPracticeCompletionOptions,
-  resetPracticeTimer,
-  setLastPracticeDate,
   getLastPracticeDate,
   shuffleArray,
 } from "./practice.js";
@@ -58,13 +56,21 @@ async function apiCall(
     clearTimeout(timeoutId);
 
     if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      const body = await res.json().catch(() => null);
+      const apiError = new Error(
+        body?.error || `HTTP ${res.status}: ${res.statusText}`
+      );
+      apiError.isApiError = true;
+      throw apiError;
     }
 
     return await res.json();
   } catch (error) {
     clearTimeout(timeoutId);
-    showFeedbackPopup("Request failed. Please try again.", "warning");
+    const message = error.isApiError
+      ? error.message
+      : "Request failed. Please try again.";
+    showFeedbackPopup(message, "warning");
     return null;
   } finally {
     if (buttonEl) buttonEl.removeAttribute("disabled");
