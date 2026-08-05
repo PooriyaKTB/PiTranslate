@@ -48,9 +48,20 @@ app.use("/api/translate", translateRoutes);
 app.use("/api/details", detailRoutes);
 app.use("/api/idiom", idiomRoutes);
 
+app.use((_req, res) => {
+  res.status(404).json({ error: "Not found" });
+});
+
 app.use((err, _req, res, _next) => {
+  if (err.message === "Not allowed by CORS") {
+    return res.status(403).json({ error: "Origin not allowed" });
+  }
+
+  const status = err.status || err.statusCode || 500;
   console.error("Unhandled error:", err.message);
-  res.status(500).json({ error: "Internal server error" });
+  res
+    .status(status)
+    .json({ error: err.expose ? err.message : "Internal server error" });
 });
 
 const PORT = process.env.PORT || 5000;

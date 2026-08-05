@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const OpenAI = require("openai");
+const { handleOpenAIError } = require("../utils/handleOpenAIError");
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -76,9 +77,7 @@ Respond strictly in this JSON format:
       synonyms: parsed.synonyms || "Not available",
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Details generation failed", details: error.message });
+    handleOpenAIError(error, res, "Details generation");
   }
 });
 

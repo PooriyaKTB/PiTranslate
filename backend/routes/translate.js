@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const OpenAI = require("openai");
+const { handleOpenAIError } = require("../utils/handleOpenAIError");
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -43,9 +44,7 @@ router.post("/", async (req, res) => {
     const result = completion.choices[0].message.content.trim();
     res.json({ translation: result });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Translation failed", details: error.message });
+    handleOpenAIError(error, res, "Translation");
   }
 });
 

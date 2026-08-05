@@ -1,7 +1,8 @@
 import { updatePracticeButton } from "./practice.js";
+import { getJSON } from "./storage.js";
 
 export function loadFavorites() {
-  return JSON.parse(localStorage.getItem("favorites")) || [];
+  return getJSON("favorites", []);
 }
 
 export function saveFavorites(favorites) {

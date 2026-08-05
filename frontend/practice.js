@@ -1,4 +1,5 @@
 import { loadFavorites, saveFavorites } from "./favorites.js";
+import { getJSON } from "./storage.js";
 
 // Fisher-Yates shuffle for unbiased randomization
 export function shuffleArray(array) {
@@ -24,7 +25,7 @@ export function updatePracticeButton() {
   const btn = document.getElementById("nextPracticeBtn");
   const dueBtn = document.getElementById("dueWordsBtn");
   const dueCount = document.getElementById("dueCount");
-  const queue = JSON.parse(localStorage.getItem("practiceQueue") || "[]");
+  const queue = getJSON("practiceQueue", []);
   const practiceStarted = localStorage.getItem("practiceStarted");
 
   const allFavorites = getAllFavorites();

@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const OpenAI = require("openai");
+const { handleOpenAIError } = require("../utils/handleOpenAIError");
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -80,10 +81,7 @@ Respond in this exact JSON format:
       equivalent: parsed.equivalent || "Not available",
     });
   } catch (error) {
-    res.status(500).json({
-      error: "Idiom generation failed",
-      details: error.message,
-    });
+    handleOpenAIError(error, res, "Idiom generation");
   }
 });
 

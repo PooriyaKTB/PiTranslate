@@ -14,8 +14,9 @@ import {
   getLastPracticeDate,
   shuffleArray,
 } from "./practice.js";
+import { getJSON } from "./storage.js";
 
-const API_BASE = "https://pooriya-pitranslate.hosting.codeyourfuture.io/api";
+const API_BASE = "https://pooriya-pitranslate.grads.hosting.cyf.academy/api";
 
 const LANG_NAMES = {
   "fr-FR": "French",
@@ -659,7 +660,7 @@ document.getElementById("nextPracticeBtn").addEventListener("click", () => {
     localStorage.setItem("practiceStarted", "true");
     practiceIndex = 0;
     localStorage.setItem("practiceIndex", "0");
-    practiceQueue = JSON.parse(localStorage.getItem("practiceQueue")) || [];
+    practiceQueue = getJSON("practiceQueue", []);
     document.getElementById("nextPracticeBtn").style.display = "none";
     showCurrentPracticeWord();
   }
