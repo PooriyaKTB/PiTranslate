@@ -10,7 +10,7 @@ export function saveFavorites(favorites) {
 }
 
 // Returns false if the word is already saved.
-export function addFavorite({ text, translation }) {
+export function addFavorite({ text, translation, pronunciation = "" }) {
   const favorites = loadFavorites();
   const exists = favorites.some(
     (f) => f.text.trim().toLowerCase() === text.trim().toLowerCase()
@@ -20,6 +20,7 @@ export function addFavorite({ text, translation }) {
     id: crypto.randomUUID(),
     text,
     translation,
+    pronunciation,
     addedAt: new Date().toISOString(),
     reviewed: 0, // consecutive correct answers
     nextReview: null, // null = due now
@@ -52,6 +53,9 @@ export function renderFavorites(onRemove) {
         el("div", {}, [
           el("div", { className: "fav-text", text: item.text }),
           el("div", { className: "fav-translation", text: item.translation }),
+          ...(item.pronunciation
+            ? [el("div", { className: "pronunciation", text: item.pronunciation })]
+            : []),
         ]),
         el("button", {
           className: "btn btn-ghost icon-btn",

@@ -19,13 +19,14 @@ const output = $("output");
 const sourceSelect = $("sourceLang");
 const targetSelect = $("targetLang");
 const resultBoxes = ["selectionResult", "extraDetails", "idiomOutput"].map($);
+const DETECT_LABEL = "Detect language";
 const outputButtons = ["speakBtn", "copyBtn", "favBtn"].map($);
 
-// Last successful translation ({ text, translation, langCode }); null once the input changes.
+// Last successful translation ({ text, translation, pronunciation, langCode }); null once the input changes.
 let lastTranslation = null;
 
 // ===== Setup =====
-fillLanguageSelect(sourceSelect, { label: "Detect language", value: "auto", selected: "auto" });
+fillLanguageSelect(sourceSelect, { label: DETECT_LABEL, value: "auto", selected: "auto" });
 fillLanguageSelect(targetSelect, { label: "Choose target language" });
 
 // Keys from older versions (pre-practiceSession practice state, old clear-favorites checkbox)
@@ -93,11 +94,16 @@ function selectedText() {
 function setTranslation(value) {
   lastTranslation = value;
   output.textContent = value?.translation ?? "";
+  $("pronunciation").textContent = value?.pronunciation ?? "";
+  $("pronunciation").classList.toggle("hidden", !value?.pronunciation);
   outputButtons.forEach((btn) => (btn.disabled = !value));
+  updateSpeakButton();
 }
 
 function clearResults() {
   setTranslation(null);
+  sourceSelect.options[0].textContent = DETECT_LABEL;
+  $("didYouMean").classList.add("hidden");
   resultBoxes.forEach((box) => {
     box.replaceChildren();
     box.classList.add("hidden");
@@ -141,8 +147,21 @@ async function translate() {
     button
   );
   // Ignore the reply if the text changed while it was in flight
-  if (data?.translation && input.value.trim() === text) {
-    setTranslation({ text, translation: data.translation, langCode });
+  if (!data?.translation || input.value.trim() !== text) return;
+
+  // Favorites keep the corrected spelling when there was one
+  setTranslation({
+    text: data.correction || text,
+    translation: data.translation,
+    pronunciation: data.pronunciation,
+    langCode,
+  });
+  if (data.detectedLanguage) {
+    sourceSelect.options[0].textContent = `${data.detectedLanguage} — detected`;
+  }
+  if (data.correction) {
+    $("correctionBtn").textContent = data.correction;
+    $("didYouMean").classList.remove("hidden");
   }
 }
 
@@ -168,6 +187,12 @@ input.addEventListener("keydown", (e) => {
 targetSelect.addEventListener("change", () => saveLang(targetSelect.value));
 
 $("translateBtn").addEventListener("click", translate);
+
+$("correctionBtn").addEventListener("click", () => {
+  input.value = $("correctionBtn").textContent;
+  updateCharCount();
+  translate();
+});
 
 $("swapBtn").addEventListener("click", () => {
   if (sourceSelect.value === "auto") {
@@ -201,6 +226,7 @@ $("selectionBtn").addEventListener("click", async (e) => {
   showResult($("selectionResult"), [
     el("h3", { text: "Selection" }),
     el("p", {}, [el("strong", { text }), ` → ${data.translation}`]),
+    ...(data.pronunciation ? [el("p", { className: "pronunciation", text: data.pronunciation })] : []),
   ]);
 });
 
@@ -259,20 +285,42 @@ $("idiomBtn").addEventListener("click", async (e) => {
 });
 
 // ===== Output buttons (enabled only while lastTranslation is set) =====
-let voices = speechSynthesis.getVoices();
-speechSynthesis.onvoiceschanged = () => (voices = speechSynthesis.getVoices());
+// Listen uses the device's own voices, which vary by OS/browser (macOS has no Persian
+// voice, for example), so the button is hidden when the translation's language has none.
+const canSpeak = "speechSynthesis" in window;
+let voices = [];
+
+function findVoice(langCode) {
+  const base = langCode.split("-")[0];
+  return (
+    voices.find((v) => v.lang === langCode) ||
+    voices.find((v) => v.lang.split(/[-_]/)[0] === base)
+  );
+}
+
+function updateSpeakButton() {
+  const unavailable = !canSpeak || (lastTranslation && !findVoice(lastTranslation.langCode));
+  $("speakBtn").classList.toggle("hidden", Boolean(unavailable));
+}
+
+if (canSpeak) {
+  // Voices load asynchronously in most browsers
+  const loadVoices = () => {
+    voices = speechSynthesis.getVoices();
+    updateSpeakButton();
+  };
+  loadVoices();
+  speechSynthesis.addEventListener("voiceschanged", loadVoices);
+}
 
 $("speakBtn").addEventListener("click", () => {
   const { translation, langCode } = lastTranslation;
   const utterance = new SpeechSynthesisUtterance(translation);
   utterance.lang = langCode;
-  const prefix = langCode.split("-")[0];
-  const voice =
-    voices.find((v) => v.lang === langCode) || voices.find((v) => v.lang.startsWith(prefix));
-  if (voice) utterance.voice = voice;
-  utterance.onerror = () => showToast("Speech isn't available for this language.", "warning");
+  utterance.voice = findVoice(langCode);
+  utterance.onerror = () => showToast("Couldn't play the audio.", "warning");
 
-  speechSynthesis.cancel();
+  if (speechSynthesis.speaking) speechSynthesis.cancel();
   speechSynthesis.speak(utterance);
 });
 

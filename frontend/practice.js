@@ -204,6 +204,7 @@ function renderWord(session, item) {
   const answer = el("details", {}, [
     el("summary", { text: "Show answer" }),
     el("p", { className: "practice-answer", text: item.translation }),
+    ...(item.pronunciation ? [el("p", { className: "pronunciation", text: item.pronunciation })] : []),
     feedback,
   ]);
   answer.addEventListener("toggle", () => {

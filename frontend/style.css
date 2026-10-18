@@ -322,15 +322,35 @@ select:focus {
 .pane textarea:focus {
   box-shadow: none;
 }
+.did-you-mean {
+  margin: 0;
+  padding: 0 14px 10px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+.did-you-mean .link-btn {
+  font-weight: 600;
+  text-align: left;
+}
 .pane-output {
   background: var(--surface-2);
 }
-.output-text {
+.output-body {
   flex: 1;
   padding: 14px;
+}
+.output-text {
   font-size: 1.1rem;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+.pronunciation {
+  color: var(--muted);
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+#pronunciation {
+  margin-top: 6px;
 }
 .output-text:empty::before {
   content: "Translation";

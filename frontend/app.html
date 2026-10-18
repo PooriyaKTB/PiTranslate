@@ -47,6 +47,10 @@
               maxlength="5000"
               aria-label="Text to translate"
             ></textarea>
+            <p id="didYouMean" class="did-you-mean hidden">
+              Did you mean:
+              <button id="correctionBtn" class="link-btn"></button>?
+            </p>
             <div class="pane-footer">
               <span id="shortcutHint">Ctrl + Enter to translate</span>
               <button id="selectionBtn" class="btn selection-chip hidden"></button>
@@ -55,7 +59,10 @@
           </div>
 
           <div class="pane pane-output">
-            <div id="output" class="output-text" aria-live="polite"></div>
+            <div class="output-body" aria-live="polite">
+              <div id="output" class="output-text"></div>
+              <div id="pronunciation" class="pronunciation hidden"></div>
+            </div>
             <div class="pane-footer">
               <div class="output-actions">
                 <button
