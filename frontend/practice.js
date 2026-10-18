@@ -26,7 +26,8 @@ let keyActions = null;
 document.addEventListener("keydown", (e) => {
   if (!keyActions || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
   // Leave typing and native button/link activation alone
-  if (e.target.closest("input, textarea, select, button, a, [contenteditable]")) return;
+  const target = e.target instanceof Element ? e.target : null;
+  if (target?.closest("input, textarea, select, button, a, [contenteditable]")) return;
   const action = keyActions[e.key.length === 1 ? e.key.toLowerCase() : e.key];
   if (!action) return;
   e.preventDefault();
@@ -119,15 +120,25 @@ export function renderPractice() {
   }
 
   const session = pruneSession(stored, favoritesById);
+  if (session.ids.length === 0) {
+    // Every word in the session was deleted; nothing was practised to completion
+    stopPractice();
+    renderIdle(favorites);
+    return;
+  }
   if (session.index >= session.ids.length) {
     stopPractice();
-    localStorage.setItem("lastPracticeDate", new Date().toISOString());
+    markPracticed();
     renderIdle(favorites, session.ids.length);
     return;
   }
 
   saveSession(session);
   renderWord(session, favoritesById.get(session.ids[session.index]));
+}
+
+function markPracticed() {
+  localStorage.setItem("lastPracticeDate", new Date().toISOString());
 }
 
 function renderIdle(favorites, finishedCount = 0) {
@@ -190,6 +201,7 @@ function renderWord(session, item, revealed = false) {
   const next = () => goTo(session, session.index + 1);
   const reveal = () => renderWord(session, item, true);
   const end = () => {
+    if (session.index > 0) markPracticed();
     stopPractice();
     renderPractice();
   };

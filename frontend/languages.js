@@ -45,13 +45,16 @@ export function getLangName(code) {
 }
 
 // Maps a language name from the API (e.g. a detected "English") to a code in the list.
-// A general name matches its first variant ("English" → "English (UK)").
+// A general name matches its first variant ("English" → "English (UK)"), and notes the
+// model may add are ignored ("Persian (romanised)" → "Persian").
 export function findLangCode(name) {
-  const n = (name || "").trim().toLowerCase();
-  if (!n) return "";
+  const full = (name || "").trim().toLowerCase();
+  const base = full.replace(/\s*\(.*?\)/g, "").trim();
+  if (!base) return "";
   const lang =
-    LANGUAGES.find((l) => l.name.toLowerCase() === n) ||
-    LANGUAGES.find((l) => l.name.toLowerCase().startsWith(`${n} (`));
+    LANGUAGES.find((l) => l.name.toLowerCase() === full) ||
+    LANGUAGES.find((l) => l.name.toLowerCase() === base) ||
+    LANGUAGES.find((l) => l.name.toLowerCase().startsWith(`${base} (`));
   return lang?.code || "";
 }
 

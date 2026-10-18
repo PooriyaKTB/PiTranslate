@@ -5,10 +5,9 @@
   "workspaces": [
     "backend"
   ],
-  "description": "Built with Node.js, OpenAI API, Firebase Auth, Vanilla JS, HTML/CSS.",
+  "description": "AI-powered translator and vocabulary trainer (Node.js/Express + OpenAI backend, vanilla JS frontend, Firebase Auth).",
   "scripts": {
-    "start": "npm start --workspace=backend",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npm start --workspace=backend"
   },
   "repository": {
     "type": "git",

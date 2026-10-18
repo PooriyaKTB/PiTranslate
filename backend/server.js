@@ -1,7 +1,9 @@
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const rateLimit = require("express-rate-limit");
-require("dotenv").config();
+// Resolved from this file, so the server finds backend/.env whatever directory it's started from
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 if (!process.env.OPENAI_API_KEY) {
   console.error("❌ OPENAI_API_KEY is missing!");
@@ -13,6 +15,13 @@ const detailRoutes = require("./routes/details");
 const idiomRoutes = require("./routes/idiom");
 
 const app = express();
+
+// Deployed behind one reverse proxy (Coolify/Render): trust its X-Forwarded-For so
+// rate limiting sees each client's IP instead of the proxy's (one shared bucket).
+app.set("trust proxy", Number(process.env.TRUST_PROXY ?? 1));
+
+// For the hosting platform's health checks; outside /api so it isn't rate limited
+app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
 const allowedOrigins = (
   process.env.ALLOWED_ORIGINS ||

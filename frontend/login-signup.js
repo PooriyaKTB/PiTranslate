@@ -51,8 +51,11 @@ function fail(msg) {
   return null;
 }
 
+const TITLES = { login: "Log in", signup: "Sign up", reset: "Reset password" };
+
 function setMode(mode) {
   form.dataset.mode = mode;
+  document.title = `${TITLES[mode]} — PiTranslate`;
   passwordInput.autocomplete = mode === "signup" ? "new-password" : "current-password";
   showError("");
 }

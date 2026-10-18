@@ -9,14 +9,19 @@ export function saveFavorites(favorites) {
   localStorage.setItem("favorites", JSON.stringify(favorites));
 }
 
-export function findFavorite(text) {
+// A favorite is a text in a target language ("hello" → French and → Persian are two).
+// Favorites saved before languages were stored have no langCode and match any language.
+export function findFavorite({ text, langCode }) {
   const key = text.trim().toLowerCase();
-  return loadFavorites().find((f) => f.text.trim().toLowerCase() === key);
+  return loadFavorites().find(
+    (f) =>
+      f.text.trim().toLowerCase() === key && (!f.langCode || !langCode || f.langCode === langCode)
+  );
 }
 
 // Returns false if the word is already saved.
 export function addFavorite({ text, translation, pronunciation = "", langCode, sourceLang, detectedLanguage }) {
-  if (findFavorite(text)) return false;
+  if (findFavorite({ text, langCode })) return false;
   const favorites = loadFavorites();
   favorites.push({
     id: crypto.randomUUID(),

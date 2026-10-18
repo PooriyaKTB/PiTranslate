@@ -29,27 +29,12 @@ const outputButtons = ["speakBtn", "copyBtn", "favBtn"].map($);
 // { text, translation, pronunciation, langCode, sourceLang ("auto" or a code), detectedLanguage }
 let lastTranslation = null;
 
-// ===== Setup =====
-fillLanguageSelect(sourceSelect, { label: DETECT_LABEL, value: "auto", selected: "auto" });
-fillLanguageSelect(targetSelect, { label: "Choose target language" });
-
-// Keys from older versions (pre-practiceSession practice state, old clear-favorites checkbox)
-["practiceQueue", "practiceIndex", "practiceStarted", "timerWasReset", "skipDeleteConfirm"].forEach(
-  (key) => localStorage.removeItem(key)
-);
-
-if (/Mac|iPhone|iPad/.test(navigator.userAgent)) {
-  $("shortcutHint").textContent = "⌘ + Enter to translate";
-}
-
-refreshLists();
-
 function refreshLists() {
   renderFavorites({ onOpen: showEntry, onRemove: removeFavoriteWithUndo });
   renderRecent({
     onOpen: showEntry,
     onToggleFavorite: toggleFavorite,
-    isFavorite: (entry) => Boolean(findFavorite(entry.text)),
+    isFavorite: (entry) => Boolean(findFavorite(entry)),
   });
   renderPractice();
   updateFavButton();
@@ -69,7 +54,7 @@ function removeFavoriteWithUndo(id) {
 }
 
 function toggleFavorite(entry) {
-  const existing = findFavorite(entry.text);
+  const existing = findFavorite(entry);
   if (existing) {
     removeFavoriteWithUndo(existing.id);
     return;
@@ -81,7 +66,7 @@ function toggleFavorite(entry) {
 
 // ⭐ is filled when the current translation is already a favorite.
 function updateFavButton() {
-  const saved = Boolean(lastTranslation && findFavorite(lastTranslation.text));
+  const saved = Boolean(lastTranslation && findFavorite(lastTranslation));
   const btn = $("favBtn");
   btn.textContent = saved ? "⭐" : "☆";
   btn.title = saved ? "Remove from favorites" : "Save to favorites";
@@ -230,7 +215,8 @@ function showEntry(entry) {
     sourceSelect.options[0].textContent = `${entry.detectedLanguage} — detected`;
   }
 
-  setTranslation(entry);
+  // Favorites saved before languages were stored take the currently selected one
+  setTranslation({ ...entry, langCode: entry.langCode || targetSelect.value });
   $("translator").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -322,8 +308,12 @@ $("detailsBtn").addEventListener("click", async (e) => {
   const targetLang = requireTargetLang();
   if (!targetLang) return;
 
-  const data = await apiCall("details", { inputText: text, targetLang }, e.currentTarget);
-  if (!data) return;
+  const data = await apiCall(
+    "details",
+    { inputText: text, targetLang, inputLang: sourceLangName() },
+    e.currentTarget
+  );
+  if (!data || input.value.trim() !== text) return;
 
   const pairs = (items, key) =>
     items.length
@@ -358,7 +348,7 @@ $("idiomBtn").addEventListener("click", async (e) => {
     { inputText: text, targetLang, inputLang: sourceLangName() },
     e.currentTarget
   );
-  if (!data) return;
+  if (!data || input.value.trim() !== text) return;
 
   showResult($("idiomOutput"), [
     el("h3", { text: "Idiom" }),
@@ -377,6 +367,7 @@ const canSpeak = "speechSynthesis" in window;
 let voices = [];
 
 function findVoice(langCode) {
+  if (!langCode) return undefined;
   const base = langCode.split("-")[0];
   return (
     voices.find((v) => v.lang === langCode) ||
@@ -443,3 +434,18 @@ $("confirmClearBtn").addEventListener("click", () => {
   refreshLists();
   clearDialog.close();
 });
+
+// ===== Init (last, so everything above is defined) =====
+fillLanguageSelect(sourceSelect, { label: DETECT_LABEL, value: "auto", selected: "auto" });
+fillLanguageSelect(targetSelect, { label: "Choose target language" });
+
+// Keys from older versions (pre-practiceSession practice state, old clear-favorites checkbox)
+["practiceQueue", "practiceIndex", "practiceStarted", "timerWasReset", "skipDeleteConfirm"].forEach(
+  (key) => localStorage.removeItem(key)
+);
+
+if (/Mac|iPhone|iPad/.test(navigator.userAgent)) {
+  $("shortcutHint").textContent = "⌘ + Enter to translate";
+}
+
+refreshLists();
