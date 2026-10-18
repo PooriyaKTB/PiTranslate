@@ -147,7 +147,7 @@ button:hover {
   display: none;
 }
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 .spinner {
@@ -300,34 +300,16 @@ button:active {
   color: var(--muted);
   font-size: 0.9rem;
 }
-.practice-btn-start {
-  margin: 0.5rem;
-  padding: 0.8rem 1.5rem;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.practice-btn-reset {
-  margin: 0.5rem;
-  padding: 0.8rem 1.5rem;
-  background: #ffc107;
-  color: #212529;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.practice-btn-after-reset {
-  margin: 1rem;
-  padding: 0.8rem 1.5rem;
-  background: #28a745;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+
+#dueCount {
+  color: #28a745;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
 }
 
+.practice-feedback {
+  margin-top: 10px;
+}
 /* === Validation error text === */
 .validation-error {
   color: #c62828;

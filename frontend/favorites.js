@@ -1,5 +1,5 @@
-import { updatePracticeButton } from "./practice.js";
 import { getJSON } from "./storage.js";
+import { el } from "./dom.js";
 
 export function loadFavorites() {
   return getJSON("favorites", []);
@@ -20,48 +20,35 @@ export function addFavorite({ text, translation }) {
     text,
     translation,
     addedAt: new Date().toISOString(),
-    reviewed: 0,
-    nextReview: new Date(Date.now() - 1000).toISOString(),
+    reviewed: 0, // consecutive correct answers
+    nextReview: null, // null = due now
   });
   saveFavorites(favorites);
 }
 
 export function removeFavorite(id) {
-  const favorites = loadFavorites().filter((f) => f.id !== id);
-  saveFavorites(favorites);
+  saveFavorites(loadFavorites().filter((f) => f.id !== id));
 }
 
-export function renderFavorites() {
+export function clearFavorites() {
+  localStorage.removeItem("favorites");
+}
+
+export function renderFavorites(onRemove) {
   const favorites = loadFavorites();
-  const list = document.getElementById("favoritesList");
-  list.replaceChildren();
 
-  const clearBtn = document.getElementById("clearFavoritesBtn");
-  if (!clearBtn) return;
+  document
+    .getElementById("clearFavoritesBtn")
+    .classList.toggle("hidden", favorites.length < 2);
 
-  if (favorites.length < 2) {
-    clearBtn.classList.add("hidden");
-  } else {
-    clearBtn.classList.remove("hidden");
-  }
-
-  favorites.forEach((item) => {
-    const li = document.createElement("li");
-
-    li.appendChild(document.createTextNode("📌 "));
-
-    const strong = document.createElement("strong");
-    strong.textContent = item.text;
-    li.appendChild(strong);
-
-    li.appendChild(document.createTextNode(` → ${item.translation}`));
-
-    const removeBtn = document.createElement("button");
-    removeBtn.textContent = "❌";
-    removeBtn.addEventListener("click", () => removeFavoriteAndRender(item.id));
-    li.appendChild(removeBtn);
-
-    list.appendChild(li);
-  });
-  updatePracticeButton();
+  document.getElementById("favoritesList").replaceChildren(
+    ...favorites.map((item) =>
+      el("li", {}, [
+        "📌 ",
+        el("strong", { text: item.text }),
+        ` → ${item.translation}`,
+        el("button", { text: "❌", onclick: () => onRemove(item.id) }),
+      ])
+    )
+  );
 }

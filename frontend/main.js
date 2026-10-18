@@ -2,19 +2,16 @@ import {
   addFavorite,
   renderFavorites,
   removeFavorite,
-  saveFavorites,
+  clearFavorites,
   loadFavorites,
 } from "./favorites.js";
 import {
   getDueItems,
-  getAllFavorites,
-  scheduleReview,
-  updatePracticeButton,
-  showPracticeCompletionOptions,
-  getLastPracticeDate,
-  shuffleArray,
+  startPractice,
+  stopPractice,
+  renderPractice,
 } from "./practice.js";
-import { getJSON } from "./storage.js";
+import { showToast } from "./toast.js";
 
 const API_BASE = "https://pooriya-pitranslate.grads.hosting.cyf.academy/api";
 
@@ -71,7 +68,7 @@ async function apiCall(
     const message = error.isApiError
       ? error.message
       : "Request failed. Please try again.";
-    showFeedbackPopup(message, "warning");
+    showToast(message, "warning");
     return null;
   } finally {
     if (buttonEl) buttonEl.removeAttribute("disabled");
@@ -117,18 +114,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const savedTheme = localStorage.getItem("theme") || "light";
   document.documentElement.setAttribute("data-theme", savedTheme);
-  renderFavorites();
 
-  const lastPracticeDate = getLastPracticeDate();
-  const practiceStarted = localStorage.getItem("practiceStarted");
-
-  if (lastPracticeDate && !practiceStarted) {
-    showPracticeCompletionOptions();
-    document.getElementById("nextPracticeBtn").style.display = "none";
-  } else {
-    updatePracticeButton();
-  }
+  // Practice state from before practiceSession existed
+  ["practiceQueue", "practiceIndex", "practiceStarted", "timerWasReset"].forEach(
+    (key) => localStorage.removeItem(key)
+  );
+  refreshLists();
 });
+
+function refreshLists() {
+  renderFavorites((id) => {
+    removeFavorite(id);
+    refreshLists();
+  });
+  renderPractice();
+}
 
 onAuthStateChanged(auth, (user) => {
   const welcomeText = document.getElementById("userWelcome");
@@ -148,274 +148,6 @@ onAuthStateChanged(auth, (user) => {
     else window.location.href = "index.html";
   }
 });
-
-let practiceQueue = [];
-let practiceIndex = 0;
-
-let practiceInTransition = false;
-let practiceAdvanceTimerId = null;
-
-window.removeFavoriteAndRender = (id) => {
-  removeFavorite(id);
-  renderFavorites();
-  buildPracticeQueue();
-  updatePracticeButton();
-};
-
-function buildPracticeQueue() {
-  const allFavorites = getAllFavorites();
-  const shuffled = shuffleArray([...allFavorites]);
-  localStorage.setItem("practiceQueue", JSON.stringify(shuffled));
-  updatePracticeButton();
-  return shuffled;
-}
-
-function resetPractice() {
-  const favorites = loadFavorites();
-  favorites.forEach((f) => {
-    f.reviewed = 0;
-    f.nextReview = new Date(Date.now() - 1000).toISOString();
-  });
-  saveFavorites(favorites);
-
-  localStorage.removeItem("practiceStarted");
-  localStorage.removeItem("practiceIndex");
-  localStorage.removeItem("practiceQueue");
-  document.getElementById("practiceArea").replaceChildren();
-  practiceQueue = buildPracticeQueue();
-  updatePracticeButton();
-  document.getElementById("nextPracticeBtn").textContent = "Start Practice";
-  document.getElementById("nextPracticeBtn").style.display = "inline-block";
-}
-
-function startPracticeAllWords() {
-  const allFavorites = loadFavorites();
-  const shuffled = shuffleArray([...allFavorites]);
-  localStorage.setItem("practiceQueue", JSON.stringify(shuffled));
-  localStorage.setItem("practiceIndex", "0");
-  localStorage.setItem("practiceStarted", "true");
-  document.getElementById("practiceArea").classList.add("hidden");
-  updatePracticeButton();
-
-  practiceQueue = shuffled;
-  practiceIndex = 0;
-  showCurrentPracticeWord();
-}
-
-function startPracticeDueWords() {
-  const dueItems = getDueItems();
-
-  if (dueItems.length === 0) {
-    showFeedbackPopup(
-      "No due words right now. You can still practice all words.",
-      "warning"
-    );
-    return;
-  }
-
-  const shuffled = shuffleArray([...dueItems]);
-  localStorage.setItem("practiceQueue", JSON.stringify(shuffled));
-  localStorage.setItem("practiceIndex", "0");
-  localStorage.setItem("practiceStarted", "true");
-  document.getElementById("practiceArea").classList.add("hidden");
-  updatePracticeButton();
-
-  practiceQueue = shuffled;
-  practiceIndex = 0;
-  showCurrentPracticeWord();
-}
-
-function showFeedbackPopup(message, type) {
-  const existingPopup = document.getElementById("feedbackPopup");
-  if (existingPopup) existingPopup.remove();
-
-  const popup = document.createElement("div");
-  popup.id = "feedbackPopup";
-  popup.className = `feedback-popup ${type}`;
-  popup.textContent = message;
-
-  document.body.appendChild(popup);
-
-  setTimeout(() => {
-    if (popup.parentNode) popup.remove();
-  }, 2000);
-}
-
-function showCurrentPracticeWord() {
-  const box = document.getElementById("practiceArea");
-  box.classList.remove("hidden");
-
-  if (practiceQueue.length === 0) {
-    showPracticeCompletionOptions();
-    localStorage.removeItem("practiceStarted");
-    localStorage.removeItem("practiceIndex");
-    return;
-  }
-
-  if (practiceIndex >= practiceQueue.length) {
-    setTimeout(() => {
-      showPracticeCompletionOptions();
-      localStorage.removeItem("practiceStarted");
-      localStorage.removeItem("practiceIndex");
-    }, 100);
-    return;
-  }
-
-  const item = practiceQueue[practiceIndex];
-
-  box.replaceChildren();
-
-  practiceInTransition = false;
-  if (practiceAdvanceTimerId) {
-    clearTimeout(practiceAdvanceTimerId);
-    practiceAdvanceTimerId = null;
-  }
-
-  const navDiv = document.createElement("div");
-  navDiv.className = "practice-nav";
-
-  const prevBtn = document.createElement("button");
-  prevBtn.id = "prevWordBtn";
-  prevBtn.className = "practice-btn-prev";
-  prevBtn.textContent = "← Previous";
-  if (practiceIndex === 0) prevBtn.disabled = true;
-  navDiv.appendChild(prevBtn);
-
-  const counterSpan = document.createElement("span");
-  counterSpan.className = "counter";
-  counterSpan.textContent = `${practiceIndex + 1} / ${practiceQueue.length}`;
-  navDiv.appendChild(counterSpan);
-
-  const nextBtn = document.createElement("button");
-  nextBtn.id = "nextWordBtn";
-  nextBtn.className = "practice-btn-next";
-  nextBtn.textContent = "Next →";
-  navDiv.appendChild(nextBtn);
-
-  box.appendChild(navDiv);
-
-  const questionPara = document.createElement("p");
-  const questionStrong = document.createElement("strong");
-  questionStrong.textContent = "Translate this: ";
-  questionPara.appendChild(questionStrong);
-  questionPara.appendChild(document.createTextNode(item.text));
-  box.appendChild(questionPara);
-
-  const details = document.createElement("details");
-  details.id = "answerDetails";
-
-  const summary = document.createElement("summary");
-  summary.textContent = "Show Answer";
-  details.appendChild(summary);
-
-  const answerPara = document.createElement("p");
-  answerPara.textContent = item.translation;
-  details.appendChild(answerPara);
-
-  const feedbackDiv = document.createElement("div");
-  feedbackDiv.id = "feedbackButtons";
-  feedbackDiv.style.cssText = "margin-top: 10px; display: none;";
-
-  const knewBtn = document.createElement("button");
-  knewBtn.id = "knewBtn";
-  knewBtn.textContent = "✅ I knew it";
-  feedbackDiv.appendChild(knewBtn);
-
-  const didntBtn = document.createElement("button");
-  didntBtn.id = "didntBtn";
-  didntBtn.textContent = "❌ I didn't know it";
-  feedbackDiv.appendChild(didntBtn);
-
-  details.appendChild(feedbackDiv);
-  box.appendChild(details);
-
-  document
-    .querySelector("#answerDetails")
-    .addEventListener("toggle", function () {
-      const btns = document.getElementById("feedbackButtons");
-      if (this.open) btns.style.display = "block";
-    });
-
-  document.getElementById("prevWordBtn").onclick = () => {
-    if (practiceInTransition) return;
-    if (practiceIndex > 0) {
-      practiceIndex--;
-      localStorage.setItem("practiceIndex", practiceIndex);
-      showCurrentPracticeWord();
-    }
-  };
-
-  document.getElementById("nextWordBtn").onclick = () => {
-    if (practiceInTransition) return;
-    practiceIndex++;
-    localStorage.setItem("practiceIndex", practiceIndex);
-    showCurrentPracticeWord();
-  };
-
-  function handleFeedback(knewIt) {
-    if (practiceInTransition) return;
-    practiceInTransition = true;
-
-    document.getElementById("knewBtn").disabled = true;
-    document.getElementById("didntBtn").disabled = true;
-
-    if (practiceAdvanceTimerId) {
-      clearTimeout(practiceAdvanceTimerId);
-      practiceAdvanceTimerId = null;
-    }
-
-    const isFirstTime = !getLastPracticeDate();
-    const timerWasReset = localStorage.getItem("timerWasReset") === "true";
-    const isDue =
-      !item.nextReview || new Date(item.nextReview).getTime() <= Date.now();
-
-    if (isFirstTime || timerWasReset || isDue) {
-      scheduleReview(item, knewIt);
-      updatePracticeButton();
-    }
-
-    if (knewIt) {
-      const messages = [
-        "🎉 Excellent! You're doing great!",
-        "🌟 Fantastic! Keep up the good work!",
-        "💪 Amazing! You're mastering this!",
-        "🔥 Outstanding! You're on fire!",
-        "⭐ Brilliant! You're getting stronger!",
-      ];
-      showFeedbackPopup(
-        messages[Math.floor(Math.random() * messages.length)],
-        "success"
-      );
-    } else {
-      const messages = [
-        "💪 Don't worry! Every expert was once a beginner. Keep practicing!",
-        "🌟 That's okay! Mistakes are how we learn. You've got this!",
-        "🚀 No problem! Each attempt makes you stronger. Keep going!",
-        "⭐ Learning takes time! You're making progress with every try!",
-        "🔥 Every challenge is an opportunity to grow. You're doing great!",
-      ];
-      showFeedbackPopup(
-        messages[Math.floor(Math.random() * messages.length)],
-        "warning"
-      );
-    }
-
-    practiceAdvanceTimerId = setTimeout(() => {
-      practiceIndex++;
-      localStorage.setItem("practiceIndex", practiceIndex);
-      practiceInTransition = false;
-      practiceAdvanceTimerId = null;
-      showCurrentPracticeWord();
-    }, 2000);
-  }
-
-  document.getElementById("knewBtn").onclick = () => handleFeedback(true);
-  document.getElementById("didntBtn").onclick = () => handleFeedback(false);
-}
-
-window.startPracticeAllWords = startPracticeAllWords;
-window.startPracticeDueWords = startPracticeDueWords;
-window.resetPractice = resetPractice;
 
 let clearOutputsDebounceId;
 let selectionDebounceId;
@@ -489,7 +221,7 @@ document.getElementById("speakBtn").addEventListener("click", () => {
   const invalid = ["", "Please enter text to translate.", "Translation failed"];
 
   if (invalid.includes(text)) {
-    showFeedbackPopup("Nothing to speak. Translate something first.", "warning");
+    showToast("Nothing to speak. Translate something first.", "warning");
     return;
   }
 
@@ -504,7 +236,7 @@ document.getElementById("speakBtn").addEventListener("click", () => {
   if (voice) utterance.voice = voice;
 
   utterance.onerror = () => {
-    showFeedbackPopup("Speech synthesis failed for this language.", "warning");
+    showToast("Speech synthesis failed for this language.", "warning");
   };
 
   speechSynthesis.speak(utterance);
@@ -642,7 +374,7 @@ document.getElementById("favBtn").addEventListener("click", () => {
   ];
 
   if (!inputText || invalidValues.includes(translation)) {
-    showFeedbackPopup(
+    showToast(
       "Translate something first before adding to favorites.",
       "warning"
     );
@@ -650,27 +382,16 @@ document.getElementById("favBtn").addEventListener("click", () => {
   }
 
   addFavorite({ text: inputText, translation });
-  renderFavorites();
-  buildPracticeQueue();
-  updatePracticeButton();
+  refreshLists();
 });
 
-document.getElementById("nextPracticeBtn").addEventListener("click", () => {
-  if (!localStorage.getItem("practiceStarted")) {
-    localStorage.setItem("practiceStarted", "true");
-    practiceIndex = 0;
-    localStorage.setItem("practiceIndex", "0");
-    practiceQueue = getJSON("practiceQueue", []);
-    document.getElementById("nextPracticeBtn").style.display = "none";
-    showCurrentPracticeWord();
-  }
-});
+document
+  .getElementById("nextPracticeBtn")
+  .addEventListener("click", () => startPractice(loadFavorites()));
 
-document.getElementById("dueWordsBtn").addEventListener("click", () => {
-  if (!localStorage.getItem("practiceStarted")) {
-    startPracticeDueWords();
-  }
-});
+document
+  .getElementById("dueWordsBtn")
+  .addEventListener("click", () => startPractice(getDueItems()));
 
 document.getElementById("themeToggle").addEventListener("click", () => {
   const html = document.documentElement;
@@ -686,15 +407,9 @@ const cancelBtn = document.getElementById("cancelClearBtn");
 const checkbox = document.getElementById("skipConfirmCheckbox");
 
 function clearFavoritesNow() {
-  localStorage.removeItem("favorites");
-  localStorage.removeItem("practiceIndex");
-  localStorage.removeItem("practiceStarted");
-  localStorage.removeItem("practiceQueue");
-  renderFavorites();
-  document.getElementById("practiceArea").replaceChildren();
-  updatePracticeButton();
-  document.getElementById("nextPracticeBtn").textContent = "Start Practice";
-  document.getElementById("nextPracticeBtn").style.display = "inline-block";
+  clearFavorites();
+  stopPractice();
+  refreshLists();
   modal.classList.add("hidden");
 }
 

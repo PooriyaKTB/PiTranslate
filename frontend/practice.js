@@ -1,8 +1,30 @@
 import { loadFavorites, saveFavorites } from "./favorites.js";
 import { getJSON } from "./storage.js";
+import { showToast } from "./toast.js";
+import { el } from "./dom.js";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const ADVANCE_DELAY_MS = 2000;
+
+const KNEW_MESSAGES = [
+  "🎉 Excellent! You're doing great!",
+  "🌟 Fantastic! Keep up the good work!",
+  "💪 Amazing! You're mastering this!",
+  "🔥 Outstanding! You're on fire!",
+  "⭐ Brilliant! You're getting stronger!",
+];
+const DIDNT_KNOW_MESSAGES = [
+  "💪 Don't worry! Every expert was once a beginner. Keep practicing!",
+  "🌟 That's okay! Mistakes are how we learn. You've got this!",
+  "🚀 No problem! Each attempt makes you stronger. Keep going!",
+  "⭐ Learning takes time! You're making progress with every try!",
+  "🔥 Every challenge is an opportunity to grow. You're doing great!",
+];
+
+let advanceTimerId = null;
 
 // Fisher-Yates shuffle for unbiased randomization
-export function shuffleArray(array) {
+function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [array[i], array[j]] = [array[j], array[i]];
@@ -10,239 +32,191 @@ export function shuffleArray(array) {
   return array;
 }
 
-export function getAllFavorites() {
-  return loadFavorites();
+function randomItem(array) {
+  return array[Math.floor(Math.random() * array.length)];
+}
+
+function isDue(item, now = Date.now()) {
+  return !item.nextReview || new Date(item.nextReview).getTime() <= now;
 }
 
 export function getDueItems() {
-  const now = Date.now();
-  return loadFavorites().filter((item) => {
-    return !item.nextReview || new Date(item.nextReview).getTime() <= now;
-  });
+  return loadFavorites().filter((item) => isDue(item));
 }
 
-export function updatePracticeButton() {
-  const btn = document.getElementById("nextPracticeBtn");
-  const dueBtn = document.getElementById("dueWordsBtn");
-  const dueCount = document.getElementById("dueCount");
-  const queue = getJSON("practiceQueue", []);
-  const practiceStarted = localStorage.getItem("practiceStarted");
-
-  const allFavorites = getAllFavorites();
-  const dueItemsCount = getDueItems().length;
-
-  if (dueCount) {
-    if (allFavorites.length > 0) {
-      dueCount.textContent = `✅ ${dueItemsCount} words are due today`;
-      dueCount.style.color = "#28a745";
-      dueCount.style.fontSize = "0.9rem";
-      dueCount.style.margin = "0.5rem 0";
-      dueCount.style.display = "block";
-    } else {
-      dueCount.style.display = "none";
-    }
-  }
-
-  if (practiceStarted) {
-    btn.style.display = "none";
-    if (dueBtn) dueBtn.style.display = "none";
-    return;
-  }
-
-  if (!queue.length) {
-    if (allFavorites.length > 0) {
-      const shuffled = shuffleArray([...allFavorites]);
-      localStorage.setItem("practiceQueue", JSON.stringify(shuffled));
-      btn.style.display = "inline-block";
-      btn.textContent = "▶️ Start Practice";
-      if (dueBtn) dueBtn.style.display = "inline-block";
-      return;
-    }
-    btn.style.display = "none";
-    if (dueBtn) dueBtn.style.display = "none";
-    localStorage.removeItem("practiceStarted");
-    localStorage.removeItem("practiceIndex");
-    return;
-  }
-
-  btn.style.display = "inline-block";
-  btn.textContent = "▶️ Start Practice";
-  if (dueBtn) dueBtn.style.display = "inline-block";
-}
-
-export function scheduleReview(item, knewIt) {
+// A correct answer doubles the interval (2, 4, 8… days); a miss resets it to 1 day.
+function scheduleReview(id, knewIt) {
   const favorites = loadFavorites();
-  const index = favorites.findIndex((f) => f.id === item.id);
-  if (index === -1) return;
+  const item = favorites.find((f) => f.id === id);
+  if (!item) return;
 
-  const now = new Date();
-  if (knewIt) {
-    favorites[index].reviewed += 1;
-    const interval = Math.pow(2, favorites[index].reviewed);
-    favorites[index].nextReview = new Date(
-      now.getTime() + interval * 24 * 60 * 60 * 1000
-    ).toISOString();
-  } else {
-    favorites[index].reviewed = 0;
-    favorites[index].nextReview = new Date(
-      now.getTime() + 1 * 24 * 60 * 60 * 1000
-    ).toISOString();
-  }
-
-  saveFavorites(favorites);
-
-  const currentQueue = JSON.parse(
-    localStorage.getItem("practiceQueue") || "[]"
-  );
-  const updatedQueue = currentQueue.map((queueItem) => {
-    if (queueItem.id === item.id) {
-      return favorites[index];
-    }
-    return queueItem;
-  });
-  localStorage.setItem("practiceQueue", JSON.stringify(updatedQueue));
-}
-
-export function resetPracticeTimer() {
-  const favorites = loadFavorites();
-  const now = new Date();
-
-  favorites.forEach((favorite) => {
-    if (favorite.reviewed > 0) {
-      const interval = Math.pow(2, favorite.reviewed);
-      favorite.nextReview = new Date(
-        now.getTime() + interval * 24 * 60 * 60 * 1000
-      ).toISOString();
-    }
-  });
-
+  item.reviewed = knewIt ? item.reviewed + 1 : 0;
+  const days = knewIt ? 2 ** item.reviewed : 1;
+  item.nextReview = new Date(Date.now() + days * DAY_MS).toISOString();
   saveFavorites(favorites);
 }
 
-export function setLastPracticeDate() {
-  const now = new Date();
-  localStorage.setItem("lastPracticeDate", now.toISOString());
+// Session = { ids: [favorite ids in practice order], index }; absent when idle.
+function loadSession() {
+  return getJSON("practiceSession", null);
 }
 
-export function getLastPracticeDate() {
-  const lastPractice = localStorage.getItem("lastPracticeDate");
-  return lastPractice ? new Date(lastPractice) : null;
+function saveSession(session) {
+  localStorage.setItem("practiceSession", JSON.stringify(session));
 }
 
-export function showPracticeCompletionOptions() {
+export function stopPractice() {
+  clearTimeout(advanceTimerId);
+  localStorage.removeItem("practiceSession");
+}
+
+export function startPractice(items) {
+  if (items.length === 0) {
+    showToast("No due words right now. You can still practice all words.", "warning");
+    return;
+  }
+  saveSession({ ids: shuffle(items.map((item) => item.id)), index: 0 });
+  renderPractice();
+}
+
+function goTo(session, index) {
+  saveSession({ ...session, index });
+  renderPractice();
+}
+
+// Drops words deleted mid-session, keeping the position on the current word.
+function pruneSession(session, favoritesById) {
+  const exists = (id) => favoritesById.has(id);
+  const removedBefore = session.ids
+    .slice(0, session.index)
+    .filter((id) => !exists(id)).length;
+  return {
+    ids: session.ids.filter(exists),
+    index: session.index - removedBefore,
+  };
+}
+
+export function renderPractice() {
+  clearTimeout(advanceTimerId);
+
+  const favorites = loadFavorites();
+  const favoritesById = new Map(favorites.map((f) => [f.id, f]));
+  const stored = loadSession();
+
+  if (!stored) {
+    renderIdle(favorites);
+    return;
+  }
+
+  const session = pruneSession(stored, favoritesById);
+  if (session.index >= session.ids.length) {
+    stopPractice();
+    localStorage.setItem("lastPracticeDate", new Date().toISOString());
+    renderIdle(favorites, session.ids.length);
+    return;
+  }
+
+  saveSession(session);
+  renderWord(session, favoritesById.get(session.ids[session.index]));
+}
+
+function renderIdle(favorites, finishedCount = 0) {
+  const hasFavorites = favorites.length > 0;
+  const dueCount = favorites.filter((item) => isDue(item)).length;
+
+  document.querySelector(".practice-buttons").classList.toggle("hidden", !hasFavorites);
+  const dueEl = document.getElementById("dueCount");
+  dueEl.classList.toggle("hidden", !hasFavorites);
+  dueEl.textContent = `✅ ${dueCount} ${dueCount === 1 ? "word is" : "words are"} due today`;
+
   const box = document.getElementById("practiceArea");
-  const allFavorites = getAllFavorites();
-
-  box.classList.remove("hidden");
-
-  const nextBtn = document.getElementById("nextPracticeBtn");
-  const dueBtn = document.getElementById("dueWordsBtn");
-  if (nextBtn) nextBtn.style.display = "none";
-  if (dueBtn) dueBtn.style.display = "none";
-
-  setLastPracticeDate();
-
-  localStorage.removeItem("timerWasReset");
-
-  const lastPracticeDate = getLastPracticeDate();
-  const lastPracticeText = lastPracticeDate
-    ? `Last practice: ${lastPracticeDate.toLocaleDateString()} at ${lastPracticeDate.toLocaleTimeString()}`
-    : "";
-
-  const nowTs = Date.now();
-  const futureItems = allFavorites.filter(
-    (item) => item.nextReview && new Date(item.nextReview).getTime() > nowTs
-  );
-  const nextReview = futureItems.sort(
-    (a, b) => new Date(a.nextReview) - new Date(b.nextReview)
-  )[0];
-
-  const nextReviewText = nextReview
-    ? `Next scheduled practice: ${new Date(
-        nextReview.nextReview
-      ).toLocaleDateString()}`
-    : "No scheduled practice sessions";
-
-  box.replaceChildren();
-
-  const containerDiv = document.createElement("div");
-  containerDiv.className = "practice-completion";
-
-  const title = document.createElement("h3");
-  title.textContent = "🎉 Practice Complete!";
-  containerDiv.appendChild(title);
-
-  const completionMsg = document.createElement("p");
-  completionMsg.textContent = `You've finished practicing all ${allFavorites.length} words!`;
-  containerDiv.appendChild(completionMsg);
-
-  if (lastPracticeText) {
-    const lastPracticePara = document.createElement("p");
-    lastPracticePara.className = "last-practice";
-    lastPracticePara.textContent = lastPracticeText;
-    containerDiv.appendChild(lastPracticePara);
+  const lastPractice = localStorage.getItem("lastPracticeDate");
+  if (!hasFavorites || !lastPractice) {
+    box.replaceChildren();
+    box.classList.add("hidden");
+    return;
   }
 
-  const buttonContainer = document.createElement("div");
-  buttonContainer.style.margin = "1.5rem 0";
+  const last = new Date(lastPractice);
+  const nextReview = favorites
+    .filter((item) => !isDue(item))
+    .map((item) => new Date(item.nextReview))
+    .sort((a, b) => a - b)[0];
 
-  const startAgainBtn = document.createElement("button");
-  startAgainBtn.id = "startAgainBtn";
-  startAgainBtn.className = "practice-btn-start";
-  startAgainBtn.textContent = "🔁 Start Practice Again";
-  buttonContainer.appendChild(startAgainBtn);
+  const summary = el("div", { className: "practice-completion" });
+  if (finishedCount) {
+    summary.append(
+      el("h3", { text: "🎉 Practice Complete!" }),
+      el("p", { text: `You reviewed ${finishedCount} ${finishedCount === 1 ? "word" : "words"}.` })
+    );
+  }
+  summary.append(
+    el("p", {
+      className: "last-practice",
+      text: `Last practice: ${last.toLocaleDateString()} at ${last.toLocaleTimeString()}`,
+    }),
+    el("p", {
+      className: "next-review",
+      text: nextReview
+        ? `Next scheduled practice: ${nextReview.toLocaleDateString()}`
+        : "No scheduled practice sessions",
+    })
+  );
 
-  const resetTimerBtn = document.createElement("button");
-  resetTimerBtn.id = "resetTimerBtn";
-  resetTimerBtn.className = "practice-btn-reset";
-  resetTimerBtn.textContent = "⏰ Reset Next Practice Time";
-  buttonContainer.appendChild(resetTimerBtn);
+  box.replaceChildren(summary);
+  box.classList.remove("hidden");
+}
 
-  containerDiv.appendChild(buttonContainer);
+function renderWord(session, item) {
+  document.querySelector(".practice-buttons").classList.add("hidden");
+  document.getElementById("dueCount").classList.add("hidden");
 
-  const nextReviewPara = document.createElement("p");
-  nextReviewPara.className = "next-review";
-  nextReviewPara.textContent = nextReviewText;
-  containerDiv.appendChild(nextReviewPara);
+  const prevBtn = el("button", {
+    className: "practice-btn-prev",
+    text: "← Previous",
+    disabled: session.index === 0,
+    onclick: () => goTo(session, session.index - 1),
+  });
+  const nextBtn = el("button", {
+    className: "practice-btn-next",
+    text: "Next →",
+    onclick: () => goTo(session, session.index + 1),
+  });
 
-  box.appendChild(containerDiv);
+  const knewBtn = el("button", { text: "✅ I knew it" });
+  const didntBtn = el("button", { text: "❌ I didn't know it" });
+  const feedback = el("div", { className: "practice-feedback hidden" }, [knewBtn, didntBtn]);
 
-  document.getElementById("startAgainBtn").onclick = () => {
-    if (window.startPracticeAllWords) {
-      window.startPracticeAllWords();
-    }
-  };
+  function grade(knewIt) {
+    knewBtn.disabled = didntBtn.disabled = true;
+    scheduleReview(item.id, knewIt);
+    showToast(
+      randomItem(knewIt ? KNEW_MESSAGES : DIDNT_KNOW_MESSAGES),
+      knewIt ? "success" : "warning"
+    );
+    advanceTimerId = setTimeout(() => goTo(session, session.index + 1), ADVANCE_DELAY_MS);
+  }
+  knewBtn.onclick = () => grade(true);
+  didntBtn.onclick = () => grade(false);
 
-  document.getElementById("resetTimerBtn").onclick = () => {
-    resetPracticeTimer();
-    localStorage.setItem("timerWasReset", "true");
+  const answer = el("details", {}, [
+    el("summary", { text: "Show Answer" }),
+    el("p", { text: item.translation }),
+    feedback,
+  ]);
+  answer.addEventListener("toggle", () => {
+    if (answer.open) feedback.classList.remove("hidden");
+  });
 
-    box.replaceChildren();
-
-    const resetContainer = document.createElement("div");
-    resetContainer.className = "practice-completion";
-
-    const resetTitle = document.createElement("h3");
-    resetTitle.textContent = "⏰ Timer Reset!";
-    resetContainer.appendChild(resetTitle);
-
-    const message = document.createElement("p");
-    message.textContent =
-      "Next practice times have been reset based on your current progress.";
-    resetContainer.appendChild(message);
-
-    const startBtn = document.createElement("button");
-    startBtn.id = "startPracticeAfterReset";
-    startBtn.className = "practice-btn-after-reset";
-    startBtn.textContent = "🔁 Start Practice";
-    resetContainer.appendChild(startBtn);
-
-    box.appendChild(resetContainer);
-
-    document.getElementById("startPracticeAfterReset").onclick = () => {
-      if (window.startPracticeAllWords) {
-        window.startPracticeAllWords();
-      }
-    };
-  };
+  const box = document.getElementById("practiceArea");
+  box.replaceChildren(
+    el("div", { className: "practice-nav" }, [
+      prevBtn,
+      el("span", { className: "counter", text: `${session.index + 1} / ${session.ids.length}` }),
+      nextBtn,
+    ]),
+    el("p", {}, [el("strong", { text: "Translate this: " }), item.text]),
+    answer
+  );
+  box.classList.remove("hidden");
 }
