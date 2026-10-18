@@ -416,6 +416,7 @@ select:focus {
   margin-top: 12px;
 }
 .result {
+  position: relative;
   margin-top: 12px;
   padding: 14px 16px;
   border: 1px solid var(--border);
@@ -432,8 +433,23 @@ select:focus {
 .result ul {
   margin: 0 0 12px;
 }
-.result ul {
-  padding-left: 20px;
+.result-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 32px;
+  min-height: 32px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.result-close + h3 {
+  padding-right: 32px;
+}
+.pair-list {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  list-style: none;
 }
 .result > :last-child {
   margin-bottom: 0;

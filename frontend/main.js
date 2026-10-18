@@ -131,15 +131,40 @@ function clearResults() {
   setTranslation(null);
   sourceSelect.options[0].textContent = DETECT_LABEL;
   $("didYouMean").classList.add("hidden");
-  resultBoxes.forEach((box) => {
-    box.replaceChildren();
-    box.classList.add("hidden");
-  });
+  resultBoxes.forEach(hideResult);
 }
 
+function hideResult(box) {
+  box.replaceChildren();
+  box.classList.add("hidden");
+}
+
+// Shows a result card (Selection / Examples / Idiom) with its own ✕ to close it.
 function showResult(box, children) {
-  box.replaceChildren(...children);
+  const close = el("button", {
+    className: "btn btn-ghost icon-btn result-close",
+    text: "✕",
+    title: "Close",
+    ariaLabel: "Close",
+    onclick: () => hideResult(box),
+  });
+  box.replaceChildren(close, ...children);
   box.classList.remove("hidden");
+}
+
+// A text and its translation on separate lines, each with its own direction, so
+// Persian/Arabic next to English doesn't scramble the line.
+function pairList(items) {
+  return el(
+    "ul",
+    { className: "pair-list" },
+    items.map(([text, translation]) =>
+      el("li", {}, [
+        el("div", { dir: "auto", text }),
+        el("div", { className: "muted", dir: "auto", text: translation }),
+      ])
+    )
+  );
 }
 
 // Character counter + the ✕ clear button, which only shows when there's text.
@@ -297,7 +322,7 @@ $("selectionBtn").addEventListener("click", async (e) => {
   if (!data?.translation) return;
   showResult($("selectionResult"), [
     el("h3", { text: "Selection" }),
-    el("p", { dir: "auto" }, [el("strong", { text }), ` → ${data.translation}`]),
+    pairList([[text, data.translation]]),
     ...(data.pronunciation ? [el("p", { className: "pronunciation", text: data.pronunciation })] : []),
   ]);
 });
@@ -317,16 +342,7 @@ $("detailsBtn").addEventListener("click", async (e) => {
 
   const pairs = (items, key) =>
     items.length
-      ? el(
-          "ul",
-          {},
-          items.map((item) =>
-            el("li", { dir: "auto" }, [
-              item[key] ?? "",
-              el("span", { className: "muted", text: ` → ${item.translation ?? ""}` }),
-            ])
-          )
-        )
+      ? pairList(items.map((item) => [item[key], item.translation]))
       : el("p", { className: "muted", text: "None found." });
 
   showResult($("extraDetails"), [
