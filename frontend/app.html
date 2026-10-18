@@ -1,75 +1,150 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PiTranslate</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>"
+    />
+    <script src="theme.js"></script>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div class="page-wrap">
-      <header>
-        <h1>🌍 PiTranslate</h1>
-        <button id="themeToggle">🌓 Toggle Theme</button>
-      </header>
-
-      <div id="userInfo" style="margin-bottom: 1rem">
-        <p id="userWelcome">Loading...</p>
-        <button id="logoutBtn" style="display: none">Logout</button>
+    <header class="site-header">
+      <div class="page-wrap">
+        <a href="index.html" class="brand">🌍 PiTranslate</a>
+        <div class="header-actions">
+          <span id="userWelcome" class="user-welcome"></span>
+          <a id="loginLink" href="login-signup.html" class="btn hidden">Log in</a>
+          <button id="logoutBtn" class="btn btn-ghost hidden">Log out</button>
+          <button class="btn btn-ghost icon-btn" data-theme-toggle></button>
+        </div>
       </div>
-      <div id="authLinks" style="display: none">
-        <a href="login-signup.html">Login / Sign Up</a>
-      </div>
+    </header>
 
-      <main class="translator">
-        <textarea id="inputText" placeholder="Enter text..."></textarea>
-        <select id="targetLang" aria-label="Target language"></select>
-        <div class="btn-group actions-row">
-          <button id="translateBtn">Translate</button>
-          <button id="speakBtn">🔊 Speak</button>
-          <button id="detailsBtn">📚 Details</button>
-          <button id="idiomBtn">💡 Idiom</button>
-          <button id="favBtn">⭐ Favorite</button>
-        </div>
-        <div>
-          <p id="output"></p>
-          <div id="highlightTranslation"></div>
-          <div id="extraDetails"></div>
-          <div id="idiomOutput"></div>
-        </div>
-      </main>
-
-      <section>
-        <h3>⭐ Favorites</h3>
-        <ul id="favoritesList"></ul>
-        <button id="clearFavoritesBtn">🗑 Clear All Favorites</button>
-      </section>
-
-      <section>
-        <h3>📚 Spaced Repetition Practice</h3>
-        <p id="dueCount"></p>
-        <div class="practice-buttons">
-          <button id="nextPracticeBtn">▶️ Start Practice</button>
-          <button id="dueWordsBtn">📅 Due Words Only</button>
-        </div>
-        <div id="practiceArea"></div>
-      </section>
-
-      <!-- Clear Modal -->
-      <div id="clearModal" class="modal hidden">
-        <div class="modal-content">
-          <p>Are you sure you want to clear all favorites?</p>
-          <label
-            ><input type="checkbox" id="skipConfirmCheckbox" /> Don't show this
-            again</label
+    <main class="page-wrap app-main">
+      <section class="card" aria-label="Translator">
+        <div class="lang-bar">
+          <select id="sourceLang" aria-label="Source language"></select>
+          <button
+            id="swapBtn"
+            class="btn btn-ghost icon-btn"
+            title="Swap languages"
+            aria-label="Swap languages"
           >
-          <div class="modal-actions">
-            <button id="confirmClearBtn">Yes, clear all</button>
-            <button id="cancelClearBtn">Cancel</button>
+            ⇄
+          </button>
+          <select id="targetLang" aria-label="Target language"></select>
+        </div>
+
+        <div class="panes">
+          <div class="pane pane-input">
+            <textarea
+              id="inputText"
+              placeholder="Type or paste text…"
+              maxlength="5000"
+              aria-label="Text to translate"
+            ></textarea>
+            <div class="pane-footer">
+              <span id="shortcutHint">Ctrl + Enter to translate</span>
+              <button id="selectionBtn" class="btn selection-chip hidden"></button>
+              <span id="charCount" class="char-count">0 / 5000</span>
+            </div>
+          </div>
+
+          <div class="pane pane-output">
+            <div id="output" class="output-text" aria-live="polite"></div>
+            <div class="pane-footer">
+              <div class="output-actions">
+                <button
+                  id="speakBtn"
+                  class="btn btn-ghost icon-btn"
+                  title="Listen"
+                  aria-label="Listen"
+                  disabled
+                >
+                  🔊
+                </button>
+                <button
+                  id="copyBtn"
+                  class="btn btn-ghost icon-btn"
+                  title="Copy"
+                  aria-label="Copy translation"
+                  disabled
+                >
+                  📋
+                </button>
+                <button
+                  id="favBtn"
+                  class="btn btn-ghost icon-btn"
+                  title="Save to favorites"
+                  aria-label="Save to favorites"
+                  disabled
+                >
+                  ⭐
+                </button>
+              </div>
+            </div>
           </div>
         </div>
+
+        <div class="actions">
+          <button id="translateBtn" class="btn btn-primary">Translate</button>
+          <button id="detailsBtn" class="btn">📚 Examples &amp; synonyms</button>
+          <button id="idiomBtn" class="btn">💡 Idiom</button>
+        </div>
+
+        <div id="selectionResult" class="result hidden" aria-live="polite"></div>
+        <div id="extraDetails" class="result hidden" aria-live="polite"></div>
+        <div id="idiomOutput" class="result hidden" aria-live="polite"></div>
+      </section>
+
+      <section class="card" aria-labelledby="favoritesTitle">
+        <div class="card-header">
+          <h2 id="favoritesTitle">⭐ Favorites</h2>
+          <button id="clearFavoritesBtn" class="btn btn-ghost hidden">
+            Clear all
+          </button>
+        </div>
+        <p id="favoritesEmpty" class="empty-state">
+          No saved words yet. Translate something and press ⭐ to save it.
+        </p>
+        <ul id="favoritesList" class="fav-list"></ul>
+      </section>
+
+      <section class="card" aria-labelledby="practiceTitle">
+        <div class="card-header">
+          <h2 id="practiceTitle">📚 Practice</h2>
+        </div>
+        <p id="practiceEmpty" class="empty-state">
+          Save a few words to start practising with spaced repetition.
+        </p>
+        <p id="dueCount" class="due-count hidden"></p>
+        <div class="practice-buttons hidden">
+          <button id="nextPracticeBtn" class="btn btn-primary">
+            ▶️ Practice all
+          </button>
+          <button id="dueWordsBtn" class="btn">📅 Due words only</button>
+        </div>
+        <div id="practiceArea" class="hidden"></div>
+      </section>
+    </main>
+
+    <dialog id="clearDialog">
+      <div class="dialog-body">
+        <p>
+          Clear all favorites? Your practice progress is removed too, and this
+          can't be undone.
+        </p>
+        <div class="dialog-actions">
+          <button id="cancelClearBtn" class="btn">Cancel</button>
+          <button id="confirmClearBtn" class="btn btn-danger">Clear all</button>
+        </div>
       </div>
-    </div>
+    </dialog>
+
     <script type="module" src="main.js"></script>
   </body>
 </html>

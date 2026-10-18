@@ -34,7 +34,7 @@ const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("password");
 const languageSelect = document.getElementById("language");
 
-fillLanguageSelect(languageSelect, "Choose a language");
+fillLanguageSelect(languageSelect, { label: "Choose a language" });
 
 function showError(msg) {
   infoEl.textContent = "";
@@ -168,8 +168,4 @@ form.addEventListener("submit", (e) => {
 
 document.getElementById("googleBtn").addEventListener("click", (e) => {
   signIn(e.currentTarget, () => signInWithPopup(auth, provider));
-});
-
-document.getElementById("backHomeBtn").addEventListener("click", () => {
-  window.location.href = "index.html";
 });

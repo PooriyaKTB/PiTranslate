@@ -124,9 +124,11 @@ function renderIdle(favorites, finishedCount = 0) {
   const hasFavorites = favorites.length > 0;
   const dueCount = favorites.filter((item) => isDue(item)).length;
 
+  document.getElementById("practiceEmpty").classList.toggle("hidden", hasFavorites);
   document.querySelector(".practice-buttons").classList.toggle("hidden", !hasFavorites);
   const dueEl = document.getElementById("dueCount");
   dueEl.classList.toggle("hidden", !hasFavorites);
+  dueEl.classList.toggle("has-due", dueCount > 0);
   dueEl.textContent = `✅ ${dueCount} ${dueCount === 1 ? "word is" : "words are"} due today`;
 
   const box = document.getElementById("practiceArea");
@@ -172,19 +174,19 @@ function renderWord(session, item) {
   document.getElementById("dueCount").classList.add("hidden");
 
   const prevBtn = el("button", {
-    className: "practice-btn-prev",
+    className: "btn btn-ghost",
     text: "← Previous",
     disabled: session.index === 0,
     onclick: () => goTo(session, session.index - 1),
   });
   const nextBtn = el("button", {
-    className: "practice-btn-next",
-    text: "Next →",
+    className: "btn btn-ghost",
+    text: "Skip →",
     onclick: () => goTo(session, session.index + 1),
   });
 
-  const knewBtn = el("button", { text: "✅ I knew it" });
-  const didntBtn = el("button", { text: "❌ I didn't know it" });
+  const knewBtn = el("button", { className: "btn btn-success-outline", text: "✅ I knew it" });
+  const didntBtn = el("button", { className: "btn btn-danger-outline", text: "❌ I didn't know it" });
   const feedback = el("div", { className: "practice-feedback hidden" }, [knewBtn, didntBtn]);
 
   function grade(knewIt) {
@@ -200,8 +202,8 @@ function renderWord(session, item) {
   didntBtn.onclick = () => grade(false);
 
   const answer = el("details", {}, [
-    el("summary", { text: "Show Answer" }),
-    el("p", { text: item.translation }),
+    el("summary", { text: "Show answer" }),
+    el("p", { className: "practice-answer", text: item.translation }),
     feedback,
   ]);
   answer.addEventListener("toggle", () => {
@@ -210,13 +212,16 @@ function renderWord(session, item) {
 
   const box = document.getElementById("practiceArea");
   box.replaceChildren(
-    el("div", { className: "practice-nav" }, [
-      prevBtn,
-      el("span", { className: "counter", text: `${session.index + 1} / ${session.ids.length}` }),
-      nextBtn,
-    ]),
-    el("p", {}, [el("strong", { text: "Translate this: " }), item.text]),
-    answer
+    el("div", { className: "practice-card" }, [
+      el("div", { className: "practice-nav" }, [
+        prevBtn,
+        el("span", { className: "counter", text: `${session.index + 1} / ${session.ids.length}` }),
+        nextBtn,
+      ]),
+      el("p", { className: "practice-label", text: "Translate this:" }),
+      el("p", { className: "practice-word", text: item.text }),
+      answer,
+    ])
   );
   box.classList.remove("hidden");
 }

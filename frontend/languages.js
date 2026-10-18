@@ -53,10 +53,11 @@ export function saveLang(code) {
   localStorage.setItem(STORAGE_KEY, code);
 }
 
-// Fills a <select> with a disabled placeholder + every language, preselecting the saved one.
-export function fillLanguageSelect(select, placeholder) {
-  const options = [new Option(placeholder, ""), ...LANGUAGES.map((l) => new Option(l.name, l.code))];
-  options[0].disabled = true;
-  select.replaceChildren(...options);
-  select.value = getSavedLang();
+// Fills a <select> with a leading option + every language. The leading option is a
+// disabled placeholder unless it has a value of its own (e.g. "auto" for detection).
+export function fillLanguageSelect(select, { label, value = "", selected = getSavedLang() }) {
+  const first = new Option(label, value);
+  first.disabled = !value;
+  select.replaceChildren(first, ...LANGUAGES.map((l) => new Option(l.name, l.code)));
+  select.value = selected || value;
 }

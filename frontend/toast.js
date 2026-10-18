@@ -3,9 +3,10 @@ export function showToast(message, type) {
 
   const popup = document.createElement("div");
   popup.id = "feedbackPopup";
-  popup.className = `feedback-popup ${type}`;
+  popup.className = `toast ${type}`;
+  popup.setAttribute("role", "status");
   popup.textContent = message;
   document.body.appendChild(popup);
 
-  setTimeout(() => popup.remove(), 2000);
+  setTimeout(() => popup.remove(), 2500);
 }

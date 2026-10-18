@@ -1,22 +1,63 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Welcome to PiTranslate</title>
+    <title>PiTranslate — AI translator &amp; vocabulary trainer</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>"
+    />
+    <script src="theme.js"></script>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <section class="box">
-      <h1>🌍 Welcome to PiTranslate</h1>
-      <p>
-        Your AI-powered language learning companion. Translate, learn idioms,
-        and practice intelligently.
-      </p>
-      <div class="btn-group" style="justify-content: center">
-        <a href="login-signup.html" class="btn-link">Login / Sign Up</a>
-        <a href="app.html" class="btn-link">Try Now</a>
+    <header class="site-header">
+      <div class="page-wrap">
+        <a href="index.html" class="brand">🌍 PiTranslate</a>
+        <div class="header-actions">
+          <a href="login-signup.html" class="btn btn-ghost">Log in</a>
+          <button class="btn btn-ghost icon-btn" data-theme-toggle></button>
+        </div>
       </div>
-    </section>
+    </header>
+
+    <main class="hero">
+      <h1>Translate, understand, remember.</h1>
+      <p class="lead">
+        An AI-powered translator that also explains words with examples and
+        idioms - and helps you keep them with spaced-repetition practice.
+      </p>
+
+      <div class="hero-actions">
+        <a href="login-signup.html?mode=signup" class="btn btn-primary">
+          Get started
+        </a>
+        <a href="app.html" class="btn">Try without an account</a>
+      </div>
+
+      <div class="features">
+        <div class="feature">
+          <div>🌍</div>
+          <h3>36 languages</h3>
+          <p>Natural translations with automatic language detection.</p>
+        </div>
+        <div class="feature">
+          <div>📚</div>
+          <h3>Examples &amp; idioms</h3>
+          <p>See words in context, with synonyms and matching idioms.</p>
+        </div>
+        <div class="feature">
+          <div>🔊</div>
+          <h3>Listen</h3>
+          <p>Hear the pronunciation of every translation.</p>
+        </div>
+        <div class="feature">
+          <div>🧠</div>
+          <h3>Practice</h3>
+          <p>Save words and review them right before you'd forget.</p>
+        </div>
+      </div>
+    </main>
   </body>
 </html>

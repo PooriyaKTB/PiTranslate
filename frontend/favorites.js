@@ -9,12 +9,13 @@ export function saveFavorites(favorites) {
   localStorage.setItem("favorites", JSON.stringify(favorites));
 }
 
+// Returns false if the word is already saved.
 export function addFavorite({ text, translation }) {
   const favorites = loadFavorites();
   const exists = favorites.some(
     (f) => f.text.trim().toLowerCase() === text.trim().toLowerCase()
   );
-  if (exists) return;
+  if (exists) return false;
   favorites.push({
     id: crypto.randomUUID(),
     text,
@@ -24,6 +25,7 @@ export function addFavorite({ text, translation }) {
     nextReview: null, // null = due now
   });
   saveFavorites(favorites);
+  return true;
 }
 
 export function removeFavorite(id) {
@@ -40,14 +42,24 @@ export function renderFavorites(onRemove) {
   document
     .getElementById("clearFavoritesBtn")
     .classList.toggle("hidden", favorites.length < 2);
+  document
+    .getElementById("favoritesEmpty")
+    .classList.toggle("hidden", favorites.length > 0);
 
   document.getElementById("favoritesList").replaceChildren(
     ...favorites.map((item) =>
-      el("li", {}, [
-        "📌 ",
-        el("strong", { text: item.text }),
-        ` → ${item.translation}`,
-        el("button", { text: "❌", onclick: () => onRemove(item.id) }),
+      el("li", { className: "fav-item" }, [
+        el("div", {}, [
+          el("div", { className: "fav-text", text: item.text }),
+          el("div", { className: "fav-translation", text: item.translation }),
+        ]),
+        el("button", {
+          className: "btn btn-ghost icon-btn",
+          text: "✕",
+          title: "Remove",
+          ariaLabel: `Remove ${item.text}`,
+          onclick: () => onRemove(item.id),
+        }),
       ])
     )
   );
