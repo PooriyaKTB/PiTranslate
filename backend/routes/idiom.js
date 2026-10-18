@@ -1,46 +1,22 @@
 const express = require("express");
-const router = express.Router();
-const OpenAI = require("openai");
+const { chat } = require("../utils/openai");
+const { validateInput } = require("../utils/validateInput");
 const { handleOpenAIError } = require("../utils/handleOpenAIError");
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const router = express.Router();
 
-const MAX_INPUT_LENGTH = 5000;
-
-function tryParseJSON(content) {
-  try {
-    return JSON.parse(content);
-  } catch {
-    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[1].trim());
-    }
-    throw new Error("Failed to parse AI response as valid JSON");
-  }
-}
-
-router.post("/", async (req, res) => {
-  const { inputText, inputLang, targetLang } = req.body;
-
-  if (!inputText || typeof inputText !== "string" || !inputText.trim()) {
-    return res.status(400).json({ error: "inputText is required" });
-  }
-  if (!targetLang || typeof targetLang !== "string") {
-    return res.status(400).json({ error: "targetLang is required" });
-  }
-  if (inputText.length > MAX_INPUT_LENGTH) {
-    return res
-      .status(400)
-      .json({ error: `inputText exceeds ${MAX_INPUT_LENGTH} characters` });
-  }
-
+router.post("/", validateInput, async (req, res) => {
+  const { inputText, targetLang, inputLang } = req.body;
   const sourceLangInstruction =
     !inputLang || inputLang === "auto"
       ? "Auto-detect the language of the input text"
       : `The input language is ${inputLang}`;
 
   try {
-    const prompt = `${sourceLangInstruction}.
+    const data = await chat({
+      system:
+        "You are a translation and idiom assistant. Always respond with valid JSON only, no extra text.",
+      user: `${sourceLangInstruction}.
 
 Input: "${inputText}"
 Target Language: ${targetLang}
@@ -56,29 +32,15 @@ Respond in this exact JSON format:
   "idiom": "...",
   "meaning": "...",
   "equivalent": "..."
-}`;
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a translation and idiom assistant. Always respond with valid JSON only, no extra text.",
-        },
-        { role: "user", content: prompt },
-      ],
+}`,
       temperature: 0.7,
-      response_format: { type: "json_object" },
+      json: true,
     });
 
-    const content = completion.choices[0].message.content.trim();
-    const parsed = tryParseJSON(content);
-
     res.json({
-      idiom: parsed.idiom || "Not available",
-      meaning: parsed.meaning || "Not available",
-      equivalent: parsed.equivalent || "Not available",
+      idiom: data.idiom || "Not available",
+      meaning: data.meaning || "Not available",
+      equivalent: data.equivalent || "Not available",
     });
   } catch (error) {
     handleOpenAIError(error, res, "Idiom generation");

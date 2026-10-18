@@ -3,7 +3,7 @@ function handleOpenAIError(error, res, label) {
 
   if (error.status === 429) {
     return res.status(429).json({
-      error: "Too many requests to the translation service. Please try again shortly.",
+      error: "Too many requests to the AI service. Please try again shortly.",
     });
   }
 
@@ -14,13 +14,11 @@ function handleOpenAIError(error, res, label) {
   if (typeof error.status === "number" && error.status >= 500) {
     return res
       .status(502)
-      .json({ error: "Translation service is temporarily unavailable." });
+      .json({ error: "The AI service is temporarily unavailable." });
   }
 
-  if (
-    error.name === "SyntaxError" ||
-    error.message === "Failed to parse AI response as valid JSON"
-  ) {
+  // JSON.parse failure on a JSON-mode reply (e.g. truncated output)
+  if (error instanceof SyntaxError) {
     return res
       .status(502)
       .json({ error: "Received an unexpected response. Please try again." });
@@ -29,7 +27,7 @@ function handleOpenAIError(error, res, label) {
   if (error.status === undefined) {
     return res
       .status(503)
-      .json({ error: "Could not reach the translation service. Please try again." });
+      .json({ error: "Could not reach the AI service. Please try again." });
   }
 
   return res.status(500).json({ error: `${label} failed` });

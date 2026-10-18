@@ -544,7 +544,7 @@ document.getElementById("detailsBtn").addEventListener("click", async () => {
   extraDetailsElement.appendChild(examplesHeading);
 
   const examplesPara = document.createElement("p");
-  if (Array.isArray(data.examples)) {
+  if (data.examples?.length) {
     const examplesList = document.createElement("div");
     data.examples.forEach((ex) => {
       const exampleDiv = document.createElement("div");
@@ -562,7 +562,7 @@ document.getElementById("detailsBtn").addEventListener("click", async () => {
   extraDetailsElement.appendChild(synonymsHeading);
 
   const synonymsPara = document.createElement("p");
-  if (Array.isArray(data.synonyms)) {
+  if (data.synonyms?.length) {
     const synonymsList = document.createElement("div");
     data.synonyms.forEach((s) => {
       const synonymDiv = document.createElement("div");
