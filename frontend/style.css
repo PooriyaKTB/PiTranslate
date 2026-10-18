@@ -342,10 +342,11 @@ button:active {
   color: var(--text);
 }
 
+#name,
 #email,
-#password {
+#password,
+#language {
   width: 100%;
-  max-width: 95%;
   height: 42px;
   padding: 0 12px;
   font-size: 1rem;
@@ -358,8 +359,10 @@ button:active {
   margin-bottom: 8px;
 }
 
+#name:focus,
 #email:focus,
-#password:focus {
+#password:focus,
+#language:focus {
   border-color: #2f6feb;
   box-shadow: 0 0 0 3px rgba(47, 111, 235, 0.2);
 }
@@ -402,15 +405,6 @@ input:-webkit-autofill {
   box-shadow: 0 6px 16px rgba(22, 119, 255, 0.35);
 }
 
-.btn-signup {
-  background: #28a745;
-  color: #fff;
-}
-
-.btn-signup:hover {
-  box-shadow: 0 6px 16px rgba(40, 167, 69, 0.35);
-}
-
 .btn-google {
   background: var(--bg);
   color: var(--text);
@@ -439,11 +433,53 @@ input:-webkit-autofill {
   background: rgba(0, 0, 0, 0.04);
 }
 
-.auth-error {
+.auth-error,
+.auth-info {
   margin-top: 10px;
-  color: #c62828;
   font-size: 0.95rem;
   text-align: center;
+}
+.auth-error {
+  color: #c62828;
+}
+.auth-info {
+  color: var(--success-text);
+}
+.auth-error:empty,
+.auth-info:empty {
+  display: none;
+}
+
+/* Login/signup/reset share one form; data-mode decides which parts show */
+#authForm:not([data-mode="login"]) .login-only,
+#authForm:not([data-mode="signup"]) .signup-only,
+#authForm:not([data-mode="reset"]) .reset-only,
+#authForm[data-mode="reset"] .no-reset {
+  display: none;
+}
+
+.auth-hint {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin: -8px 0 16px;
+}
+
+#language {
+  margin-top: 0;
+}
+
+.auth-switch {
+  text-align: center;
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+}
+.link-btn {
+  background: none;
+  padding: 0;
+  color: var(--btn);
+  text-decoration: underline;
+  font-size: 0.9rem;
 }
 
 /* Responsive adjustments */
@@ -457,8 +493,10 @@ input:-webkit-autofill {
     gap: 8px;
   }
 
+  #name,
   #email,
-  #password {
+  #password,
+  #language {
     height: 40px;
   }
 
@@ -512,12 +550,7 @@ input:-webkit-autofill {
 /* Auth fields */
 .auth-fields {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.auth-fields > * {
-  flex: 1 1 180px;
-  min-width: 0;
+  flex-direction: column;
 }
 
 /* Medium screens */

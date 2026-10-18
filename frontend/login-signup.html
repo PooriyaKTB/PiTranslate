@@ -9,29 +9,89 @@
   </head>
   <body>
     <div class="auth-card">
-      <h2 class="auth-title">Login / Sign Up</h2>
+      <form id="authForm" data-mode="login" novalidate>
+        <h2 class="auth-title">
+          <span class="login-only">Log in</span>
+          <span class="signup-only">Create an account</span>
+          <span class="reset-only">Reset password</span>
+        </h2>
+        <p class="auth-hint reset-only">
+          Enter your email and we'll send you a link to reset your password.
+        </p>
 
-      <div class="auth-fields">
-        <label for="email" class="auth-label">Email</label>
-        <input type="email" id="email" placeholder="Email" />
+        <div class="auth-fields">
+          <label for="name" class="auth-label signup-only">Name</label>
+          <input
+            type="text"
+            id="name"
+            class="signup-only"
+            placeholder="What should we call you?"
+            autocomplete="name"
+            maxlength="50"
+          />
 
-        <label for="password" class="auth-label">Password</label>
-        <input type="password" id="password" placeholder="Password" />
-      </div>
+          <label for="email" class="auth-label">Email</label>
+          <input
+            type="email"
+            id="email"
+            placeholder="you@example.com"
+            autocomplete="email"
+          />
 
-      <div class="auth-actions">
-        <button id="loginBtn" class="btn btn-primary">Login</button>
-        <button id="signupBtn" class="btn btn-signup">Sign Up</button>
-      </div>
-      <div class="auth-actions">
-        <button id="googleBtn" class="btn btn-google">
-          Continue with Google
-        </button>
-      </div>
+          <label for="password" class="auth-label no-reset">Password</label>
+          <input
+            type="password"
+            id="password"
+            class="no-reset"
+            placeholder="At least 6 characters"
+            autocomplete="current-password"
+          />
 
-      <p id="error" class="auth-error"></p>
+          <label for="language" class="auth-label signup-only">
+            Translate into
+          </label>
+          <select id="language" class="signup-only"></select>
+        </div>
 
-      <button class="back-home" id="backHomeBtn">
+        <div class="auth-actions">
+          <button type="submit" id="submitBtn" class="btn btn-primary">
+            <span class="login-only">Log in</span>
+            <span class="signup-only">Sign up</span>
+            <span class="reset-only">Send reset link</span>
+          </button>
+          <button type="button" id="googleBtn" class="btn btn-google no-reset">
+            Continue with Google
+          </button>
+        </div>
+
+        <p id="error" class="auth-error" role="alert"></p>
+        <p id="info" class="auth-info" role="status"></p>
+
+        <p class="auth-switch login-only">
+          <button type="button" class="link-btn" data-switch="reset">
+            Forgot password?
+          </button>
+        </p>
+        <p class="auth-switch login-only">
+          Don't have an account?
+          <button type="button" class="link-btn" data-switch="signup">
+            Sign up
+          </button>
+        </p>
+        <p class="auth-switch signup-only">
+          Already have an account?
+          <button type="button" class="link-btn" data-switch="login">
+            Log in
+          </button>
+        </p>
+        <p class="auth-switch reset-only">
+          <button type="button" class="link-btn" data-switch="login">
+            ← Back to log in
+          </button>
+        </p>
+      </form>
+
+      <button type="button" class="back-home" id="backHomeBtn">
         ← Back to Home
       </button>
     </div>

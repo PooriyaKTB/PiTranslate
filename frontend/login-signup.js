@@ -1,125 +1,175 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import {
-  getAuth,
+  auth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  updateProfile,
+  sendPasswordResetEmail,
   GoogleAuthProvider,
   signInWithPopup,
-} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-import { firebaseConfig } from "./firebaseConfig.js";
+} from "./firebase.js";
+import { fillLanguageSelect, getLangName, saveLang } from "./languages.js";
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 const FIREBASE_ERRORS = {
-  "auth/user-not-found": "No account found with this email.",
-  "auth/wrong-password": "Incorrect password.",
+  "auth/invalid-credential": "Incorrect email or password.",
   "auth/invalid-email": "Invalid email format.",
+  "auth/missing-email": "Please enter your email.",
   "auth/email-already-in-use": "An account with this email already exists.",
   "auth/weak-password": "Password must be at least 6 characters.",
-  "auth/invalid-credential": "Invalid email or password.",
   "auth/too-many-requests": "Too many attempts. Please try again later.",
+  "auth/network-request-failed": "Network error. Check your connection.",
+  "auth/popup-blocked": "The Google sign-in popup was blocked by the browser.",
+  "auth/unauthorized-domain": "Sign-in isn't enabled for this site's domain.",
 };
 
-function friendlyError(error) {
-  return FIREBASE_ERRORS[error.code] || "Something went wrong. Please try again.";
-}
+// The user closed the Google popup themselves — not an error worth showing.
+const SILENT_ERRORS = ["auth/popup-closed-by-user", "auth/cancelled-popup-request"];
+
+const form = document.getElementById("authForm");
+const errorEl = document.getElementById("error");
+const infoEl = document.getElementById("info");
+const nameInput = document.getElementById("name");
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+const languageSelect = document.getElementById("language");
+
+fillLanguageSelect(languageSelect, "Choose a language");
 
 function showError(msg) {
-  document.getElementById("error").textContent = msg;
+  infoEl.textContent = "";
+  errorEl.textContent = msg;
 }
 
-function clearError() {
-  document.getElementById("error").textContent = "";
+function showInfo(msg) {
+  errorEl.textContent = "";
+  infoEl.textContent = msg;
 }
 
-function validateInputs() {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
+function fail(msg) {
+  showError(msg);
+  return null;
+}
 
-  if (!email) {
-    showError("Please enter your email.");
-    return null;
-  }
+function setMode(mode) {
+  form.dataset.mode = mode;
+  passwordInput.autocomplete = mode === "signup" ? "new-password" : "current-password";
+  showError("");
+}
+
+function isSignup() {
+  return form.dataset.mode === "signup";
+}
+
+function errorMessage(error, fallback = "Something went wrong. Please try again.") {
+  return FIREBASE_ERRORS[error.code] || fallback;
+}
+
+function validEmail() {
+  const email = emailInput.value.trim();
+  if (!email) return fail("Please enter your email.");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    showError("Please enter a valid email address.");
-    return null;
+    return fail("Please enter a valid email address.");
   }
-  if (!password) {
-    showError("Please enter your password.");
-    return null;
-  }
-  if (password.length < 6) {
-    showError("Password must be at least 6 characters.");
-    return null;
-  }
-
-  return { email, password };
+  return email;
 }
 
-function setLoading(button, loading) {
-  if (loading) {
-    button.dataset.originalText = button.textContent;
-    button.textContent = "Loading…";
-    button.disabled = true;
-  } else {
-    button.textContent = button.dataset.originalText || button.textContent;
+function validInputs() {
+  const name = nameInput.value.trim();
+  if (isSignup() && !name) return fail("Please enter your name.");
+
+  const email = validEmail();
+  if (!email) return null;
+
+  const password = passwordInput.value;
+  if (!password) return fail("Please enter your password.");
+  if (password.length < 6) return fail("Password must be at least 6 characters.");
+
+  const language = languageSelect.value;
+  if (isSignup() && !getLangName(language)) {
+    return fail("Please choose the language to translate into.");
+  }
+  return { name, email, password, language };
+}
+
+let busy = false;
+
+// Shows a loading state on the button while the action runs.
+async function withLoading(button, action) {
+  showError("");
+  const originalContent = [...button.childNodes];
+  button.textContent = "Loading…";
+  button.disabled = true;
+  try {
+    return await action();
+  } finally {
+    button.replaceChildren(...originalContent);
     button.disabled = false;
   }
 }
 
-document.getElementById("loginBtn").addEventListener("click", () => {
-  clearError();
-  const inputs = validateInputs();
-  if (!inputs) return;
+async function signIn(button, action) {
+  busy = true;
+  try {
+    await withLoading(button, action);
+    window.location.href = "app.html";
+  } catch (error) {
+    busy = false;
+    if (!SILENT_ERRORS.includes(error.code)) showError(errorMessage(error));
+  }
+}
 
-  const btn = document.getElementById("loginBtn");
-  setLoading(btn, true);
+async function sendReset(button) {
+  const email = validEmail();
+  if (!email) return;
+  try {
+    await withLoading(button, () => sendPasswordResetEmail(auth, email));
+    // Same message whether or not the account exists (no email enumeration).
+    showInfo("If an account exists for this email, a reset link has been sent. Check your inbox.");
+  } catch (error) {
+    showError(errorMessage(error, "Couldn't send the reset email. Please try again."));
+  }
+}
 
-  signInWithEmailAndPassword(auth, inputs.email, inputs.password)
-    .then(() => (window.location.href = "app.html"))
-    .catch((error) => {
-      showError(friendlyError(error));
-      setLoading(btn, false);
-    });
+// Already signed in when the page opens → straight to the app.
+auth.authStateReady().then(() => {
+  if (auth.currentUser && !busy) window.location.href = "app.html";
 });
 
-document.getElementById("signupBtn").addEventListener("click", () => {
-  clearError();
-  const inputs = validateInputs();
+setMode(new URLSearchParams(location.search).get("mode") === "signup" ? "signup" : "login");
+
+form.querySelectorAll("[data-switch]").forEach((link) =>
+  link.addEventListener("click", () => setMode(link.dataset.switch))
+);
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const button = document.getElementById("submitBtn");
+  if (form.dataset.mode === "reset") {
+    sendReset(button);
+    return;
+  }
+
+  const inputs = validInputs();
   if (!inputs) return;
 
-  const btn = document.getElementById("signupBtn");
-  setLoading(btn, true);
+  if (!isSignup()) {
+    signIn(button, () => signInWithEmailAndPassword(auth, inputs.email, inputs.password));
+    return;
+  }
 
-  createUserWithEmailAndPassword(auth, inputs.email, inputs.password)
-    .then(() => (window.location.href = "app.html"))
-    .catch((error) => {
-      showError(friendlyError(error));
-      setLoading(btn, false);
-    });
+  signIn(button, async () => {
+    const { user } = await createUserWithEmailAndPassword(auth, inputs.email, inputs.password);
+    saveLang(inputs.language);
+    // The account already exists at this point; a missing display name isn't worth failing over.
+    await updateProfile(user, { displayName: inputs.name }).catch(() => {});
+  });
 });
 
-document.getElementById("googleBtn").addEventListener("click", () => {
-  clearError();
-  const btn = document.getElementById("googleBtn");
-  setLoading(btn, true);
-
-  signInWithPopup(auth, provider)
-    .then(() => (window.location.href = "app.html"))
-    .catch((error) => {
-      showError(friendlyError(error));
-      setLoading(btn, false);
-    });
+document.getElementById("googleBtn").addEventListener("click", (e) => {
+  signIn(e.currentTarget, () => signInWithPopup(auth, provider));
 });
 
 document.getElementById("backHomeBtn").addEventListener("click", () => {
   window.location.href = "index.html";
-});
-
-document.getElementById("password").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    document.getElementById("loginBtn").click();
-  }
 });

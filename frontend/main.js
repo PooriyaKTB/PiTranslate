@@ -12,24 +12,22 @@ import {
   renderPractice,
 } from "./practice.js";
 import { showToast } from "./toast.js";
+import { fillLanguageSelect, getLangName, saveLang } from "./languages.js";
 
-const API_BASE = "https://pooriya-pitranslate.grads.hosting.cyf.academy/api";
+const IS_LOCAL = ["localhost", "127.0.0.1"].includes(location.hostname);
+const API_BASE = IS_LOCAL
+  ? "http://localhost:5050/api"
+  : "https://pooriya-pitranslate.grads.hosting.cyf.academy/api";
 
-const LANG_NAMES = {
-  "fr-FR": "French",
-  "de-DE": "German",
-  "fa-IR": "Persian",
-  "ar-SA": "Arabic",
-  "zh-CN": "Chinese",
-  "ja-JP": "Japanese",
-  "es-ES": "Spanish",
-  "ru-RU": "Russian",
-  "en-GB": "English",
-  "en-US": "English",
-};
-
-function getLangName(code) {
-  return LANG_NAMES[code] || code;
+// Returns the chosen target language name, or null (with a hint unless quiet).
+function getTargetLang({ quiet = false } = {}) {
+  const select = document.getElementById("targetLang");
+  const name = getLangName(select.value);
+  if (!name && !quiet) {
+    showToast("Choose a target language first.", "warning");
+    select.focus();
+  }
+  return name || null;
 }
 
 async function apiCall(
@@ -88,17 +86,6 @@ function ensureInlineSpinner(afterEl, id) {
   return sp;
 }
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import {
-  getAuth,
-  onAuthStateChanged,
-  signOut,
-} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-import { firebaseConfig } from "./firebaseConfig.js";
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
 document.addEventListener("DOMContentLoaded", () => {
   const detailSections = [
     "output",
@@ -130,24 +117,26 @@ function refreshLists() {
   renderPractice();
 }
 
-onAuthStateChanged(auth, (user) => {
+function showUser(user) {
   const welcomeText = document.getElementById("userWelcome");
   const logoutBtn = document.getElementById("logoutBtn");
   const authLinks = document.getElementById("authLinks");
 
-  if (user) {
-    welcomeText.textContent = `👋 Welcome, ${user.displayName || user.email}`;
-    logoutBtn.style.display = "inline-block";
-    logoutBtn.onclick = () =>
+  welcomeText.textContent = user
+    ? `👋 Welcome, ${user.displayName || user.email}`
+    : "👋 Welcome, you are in as a guest";
+  logoutBtn.style.display = user ? "inline-block" : "none";
+  authLinks.style.display = user ? "none" : "block";
+}
+
+// Loaded dynamically so the translator keeps working if the Firebase CDN is unreachable.
+import("./firebase.js")
+  .then(({ auth, onAuthStateChanged, signOut }) => {
+    document.getElementById("logoutBtn").onclick = () =>
       signOut(auth).then(() => (window.location.href = "index.html"));
-    if (authLinks) authLinks.style.display = "none";
-  } else {
-    welcomeText.textContent = "👋 Welcome, you are in as a guest";
-    logoutBtn.style.display = "none";
-    if (authLinks) authLinks.style.display = "block";
-    else window.location.href = "index.html";
-  }
-});
+    onAuthStateChanged(auth, showUser);
+  })
+  .catch(() => showUser(null));
 
 let clearOutputsDebounceId;
 let selectionDebounceId;
@@ -168,14 +157,15 @@ document.getElementById("inputText").addEventListener("input", () => {
   clearOutputsDebounceId = setTimeout(clearOutputsNow, 250);
 });
 
-document.getElementById("targetLang").addEventListener("change", () => {
+const targetLangSelect = document.getElementById("targetLang");
+fillLanguageSelect(targetLangSelect, "Choose target language");
+targetLangSelect.addEventListener("change", () => {
+  saveLang(targetLangSelect.value);
   lastSelectionText = "";
 });
 
 document.getElementById("translateBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
-  const targetLangCode = document.getElementById("targetLang").value;
-  const targetLang = getLangName(targetLangCode);
 
   const outputElement = document.getElementById("output");
   outputElement.textContent = "";
@@ -195,6 +185,9 @@ document.getElementById("translateBtn").addEventListener("click", async () => {
     outputElement.classList.remove("hidden");
     return;
   }
+
+  const targetLang = getTargetLang();
+  if (!targetLang) return;
 
   const translateBtn = document.getElementById("translateBtn");
   const spinnerEl = ensureInlineSpinner(translateBtn, "translateSpinner");
@@ -244,8 +237,6 @@ document.getElementById("speakBtn").addEventListener("click", () => {
 
 document.getElementById("detailsBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
-  const targetLangCode = document.getElementById("targetLang").value;
-  const targetLang = getLangName(targetLangCode);
 
   if (!inputText.trim()) {
     const el = document.getElementById("extraDetails");
@@ -257,6 +248,9 @@ document.getElementById("detailsBtn").addEventListener("click", async () => {
     el.classList.remove("hidden");
     return;
   }
+
+  const targetLang = getTargetLang();
+  if (!targetLang) return;
 
   const detailsBtn = document.getElementById("detailsBtn");
   const spinnerEl = ensureInlineSpinner(detailsBtn, "detailsSpinner");
@@ -311,8 +305,6 @@ document.getElementById("detailsBtn").addEventListener("click", async () => {
 
 document.getElementById("idiomBtn").addEventListener("click", async () => {
   const inputText = document.getElementById("inputText").value;
-  const targetLangCode = document.getElementById("targetLang").value;
-  const targetLang = getLangName(targetLangCode);
 
   if (!inputText.trim()) {
     const el = document.getElementById("idiomOutput");
@@ -324,6 +316,9 @@ document.getElementById("idiomBtn").addEventListener("click", async () => {
     el.classList.remove("hidden");
     return;
   }
+
+  const targetLang = getTargetLang();
+  if (!targetLang) return;
 
   const idiomBtn = document.getElementById("idiomBtn");
   const spinnerEl = ensureInlineSpinner(idiomBtn, "idiomSpinner");
@@ -434,11 +429,11 @@ cancelBtn?.addEventListener("click", () => {
 
 function handleSelectionTranslate() {
   const selected = window.getSelection().toString().trim();
-  const targetLangCode = document.getElementById("targetLang").value;
-  const targetLang = getLangName(targetLangCode);
 
   if (selected.length < 1) return;
   if (selected === lastSelectionText) return;
+  const targetLang = getTargetLang({ quiet: true });
+  if (!targetLang) return;
   lastSelectionText = selected;
 
   const box = document.getElementById("highlightTranslation");
