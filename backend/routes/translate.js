@@ -12,7 +12,7 @@ router.post("/", validateInput, async (req, res) => {
   try {
     const translation = await chat({
       system:
-        "You are a professional translator. Translate the given text accurately. Only return the translated text, nothing else.",
+        "You are a professional translator. Translate the given text accurately. Only return the translated text, without quotes or any other extra text.",
       user: `Translate the following text${from} to ${targetLang}:\n"${inputText}"`,
       temperature: 0.3,
     });
