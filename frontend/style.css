@@ -502,11 +502,26 @@ select:focus {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 8px;
-  padding: 10px 6px 10px 12px;
+  gap: 4px;
+  padding: 4px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface-2);
+}
+.fav-open {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.fav-open:hover {
+  background: var(--surface-hover);
 }
 .fav-text {
   font-weight: 600;
@@ -566,10 +581,20 @@ select:focus {
   font-weight: 600;
   overflow-wrap: anywhere;
 }
-.practice-card summary {
-  color: var(--primary);
-  font-weight: 500;
-  cursor: pointer;
+.practice-nav-actions {
+  display: flex;
+  gap: 4px;
+}
+kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.75rem;
+  line-height: 1.4;
 }
 .practice-answer {
   margin: 10px 0;
@@ -618,6 +643,16 @@ select:focus {
 .toast.warning {
   background: var(--toast-warning-bg);
   color: var(--toast-warning-text);
+}
+.toast-action {
+  margin-left: 14px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
 }
 @keyframes toast-in {
   from {
@@ -784,6 +819,14 @@ input:-webkit-autofill {
 @media (max-width: 480px) {
   .card {
     padding: 16px;
+  }
+  /* Stack the language selects so long labels ("English — detected") fit */
+  .lang-bar {
+    grid-template-columns: 1fr;
+  }
+  #swapBtn {
+    justify-self: center;
+    transform: rotate(90deg);
   }
   .actions .btn,
   .practice-buttons .btn,

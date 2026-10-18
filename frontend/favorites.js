@@ -34,15 +34,29 @@ export function addFavorite({ text, translation, pronunciation = "", langCode, s
   return true;
 }
 
+// Returns what's needed to undo the removal: the item and where it was.
 export function removeFavorite(id) {
-  saveFavorites(loadFavorites().filter((f) => f.id !== id));
+  const favorites = loadFavorites();
+  const index = favorites.findIndex((f) => f.id === id);
+  if (index === -1) return null;
+  const [item] = favorites.splice(index, 1);
+  saveFavorites(favorites);
+  return { item, index };
+}
+
+// Puts a removed favorite back in place, practice progress included.
+export function restoreFavorite({ item, index }) {
+  const favorites = loadFavorites();
+  if (favorites.some((f) => f.id === item.id)) return;
+  favorites.splice(Math.min(index, favorites.length), 0, item);
+  saveFavorites(favorites);
 }
 
 export function clearFavorites() {
   localStorage.removeItem("favorites");
 }
 
-export function renderFavorites(onRemove) {
+export function renderFavorites({ onOpen, onRemove }) {
   const favorites = loadFavorites();
 
   document
@@ -55,11 +69,11 @@ export function renderFavorites(onRemove) {
   document.getElementById("favoritesList").replaceChildren(
     ...favorites.map((item) =>
       el("li", { className: "fav-item" }, [
-        el("div", {}, [
-          el("div", { className: "fav-text", dir: "auto", text: item.text }),
-          el("div", { className: "fav-translation", dir: "auto", text: item.translation }),
+        el("button", { className: "fav-open", title: "Show this translation", onclick: () => onOpen(item) }, [
+          el("span", { className: "fav-text", dir: "auto", text: item.text }),
+          el("span", { className: "fav-translation", dir: "auto", text: item.translation }),
           ...(item.pronunciation
-            ? [el("div", { className: "pronunciation", text: item.pronunciation })]
+            ? [el("span", { className: "pronunciation", text: item.pronunciation })]
             : []),
         ]),
         el("button", {

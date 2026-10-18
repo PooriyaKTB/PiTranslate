@@ -4,7 +4,6 @@ import { showToast } from "./toast.js";
 import { el } from "./dom.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const ADVANCE_DELAY_MS = 2000;
 
 const KNEW_MESSAGES = [
   "🎉 Excellent! You're doing great!",
@@ -21,7 +20,18 @@ const DIDNT_KNOW_MESSAGES = [
   "🔥 Every challenge is an opportunity to grow. You're doing great!",
 ];
 
-let advanceTimerId = null;
+// Keyboard shortcuts for the word card currently shown ({ key: action }); null when idle.
+let keyActions = null;
+
+document.addEventListener("keydown", (e) => {
+  if (!keyActions || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  // Leave typing and native button/link activation alone
+  if (e.target.closest("input, textarea, select, button, a, [contenteditable]")) return;
+  const action = keyActions[e.key.length === 1 ? e.key.toLowerCase() : e.key];
+  if (!action) return;
+  e.preventDefault();
+  action();
+});
 
 // Fisher-Yates shuffle for unbiased randomization
 function shuffle(array) {
@@ -66,7 +76,7 @@ function saveSession(session) {
 }
 
 export function stopPractice() {
-  clearTimeout(advanceTimerId);
+  keyActions = null;
   localStorage.removeItem("practiceSession");
 }
 
@@ -97,7 +107,7 @@ function pruneSession(session, favoritesById) {
 }
 
 export function renderPractice() {
-  clearTimeout(advanceTimerId);
+  keyActions = null;
 
   const favorites = loadFavorites();
   const favoritesById = new Map(favorites.map((f) => [f.id, f]));
@@ -169,59 +179,57 @@ function renderIdle(favorites, finishedCount = 0) {
   box.classList.remove("hidden");
 }
 
-function renderWord(session, item) {
+function keyHint(label, key) {
+  return [label, " ", el("kbd", { text: key })];
+}
+
+function renderWord(session, item, revealed = false) {
   document.querySelector(".practice-buttons").classList.add("hidden");
   document.getElementById("dueCount").classList.add("hidden");
 
-  const prevBtn = el("button", {
-    className: "btn btn-ghost",
-    text: "← Previous",
-    disabled: session.index === 0,
-    onclick: () => goTo(session, session.index - 1),
-  });
-  const nextBtn = el("button", {
-    className: "btn btn-ghost",
-    text: "Skip →",
-    onclick: () => goTo(session, session.index + 1),
-  });
-
-  const knewBtn = el("button", { className: "btn btn-success-outline", text: "✅ I knew it" });
-  const didntBtn = el("button", { className: "btn btn-danger-outline", text: "❌ I didn't know it" });
-  const feedback = el("div", { className: "practice-feedback hidden" }, [knewBtn, didntBtn]);
-
-  function grade(knewIt) {
-    knewBtn.disabled = didntBtn.disabled = true;
+  const next = () => goTo(session, session.index + 1);
+  const reveal = () => renderWord(session, item, true);
+  const end = () => {
+    stopPractice();
+    renderPractice();
+  };
+  const grade = (knewIt) => {
     scheduleReview(item.id, knewIt);
     showToast(
       randomItem(knewIt ? KNEW_MESSAGES : DIDNT_KNOW_MESSAGES),
       knewIt ? "success" : "warning"
     );
-    advanceTimerId = setTimeout(() => goTo(session, session.index + 1), ADVANCE_DELAY_MS);
-  }
-  knewBtn.onclick = () => grade(true);
-  didntBtn.onclick = () => grade(false);
+    next();
+  };
 
-  const answer = el("details", {}, [
-    el("summary", { text: "Show answer" }),
-    el("p", { className: "practice-answer", dir: "auto", text: item.translation }),
-    ...(item.pronunciation ? [el("p", { className: "pronunciation", text: item.pronunciation })] : []),
-    feedback,
-  ]);
-  answer.addEventListener("toggle", () => {
-    if (answer.open) feedback.classList.remove("hidden");
-  });
+  keyActions = revealed
+    ? { 1: () => grade(true), 2: () => grade(false), s: next, Escape: end }
+    : { " ": reveal, s: next, Escape: end };
+
+  const answer = revealed
+    ? [
+        el("p", { className: "practice-answer", dir: "auto", text: item.translation }),
+        ...(item.pronunciation ? [el("p", { className: "pronunciation", text: item.pronunciation })] : []),
+        el("div", { className: "practice-feedback" }, [
+          el("button", { className: "btn btn-success-outline", onclick: () => grade(true) }, keyHint("✅ I knew it", "1")),
+          el("button", { className: "btn btn-danger-outline", onclick: () => grade(false) }, keyHint("❌ I didn't", "2")),
+        ]),
+      ]
+    : [el("button", { className: "btn btn-primary", onclick: reveal }, keyHint("Show answer", "Space"))];
 
   const box = document.getElementById("practiceArea");
   box.replaceChildren(
     el("div", { className: "practice-card" }, [
       el("div", { className: "practice-nav" }, [
-        prevBtn,
         el("span", { className: "counter", text: `${session.index + 1} / ${session.ids.length}` }),
-        nextBtn,
+        el("div", { className: "practice-nav-actions" }, [
+          el("button", { className: "btn btn-ghost", onclick: next }, keyHint("Skip", "S")),
+          el("button", { className: "btn btn-ghost", onclick: end }, keyHint("End", "Esc")),
+        ]),
       ]),
       el("p", { className: "practice-label", text: "Translate this:" }),
       el("p", { className: "practice-word", dir: "auto", text: item.text }),
-      answer,
+      ...answer,
     ])
   );
   box.classList.remove("hidden");

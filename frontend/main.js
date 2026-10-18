@@ -3,6 +3,7 @@ import {
   findFavorite,
   renderFavorites,
   removeFavorite,
+  restoreFavorite,
   clearFavorites,
   loadFavorites,
 } from "./favorites.js";
@@ -44,10 +45,7 @@ if (/Mac|iPhone|iPad/.test(navigator.userAgent)) {
 refreshLists();
 
 function refreshLists() {
-  renderFavorites((id) => {
-    removeFavorite(id);
-    refreshLists();
-  });
+  renderFavorites({ onOpen: showEntry, onRemove: removeFavoriteWithUndo });
   renderRecent({
     onOpen: showEntry,
     onToggleFavorite: toggleFavorite,
@@ -57,15 +55,27 @@ function refreshLists() {
   updateFavButton();
 }
 
+function removeFavoriteWithUndo(id) {
+  const removed = removeFavorite(id);
+  refreshLists();
+  if (!removed) return;
+  showToast("Removed from favorites.", "success", {
+    label: "Undo",
+    onClick: () => {
+      restoreFavorite(removed);
+      refreshLists();
+    },
+  });
+}
+
 function toggleFavorite(entry) {
   const existing = findFavorite(entry.text);
   if (existing) {
-    removeFavorite(existing.id);
-    showToast("Removed from favorites.", "success");
-  } else {
-    addFavorite(entry);
-    showToast("Saved to favorites.", "success");
+    removeFavoriteWithUndo(existing.id);
+    return;
   }
+  addFavorite(entry);
+  showToast("Saved to favorites.", "success");
   refreshLists();
 }
 
