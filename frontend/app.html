@@ -25,7 +25,7 @@
     </header>
 
     <main class="page-wrap app-main">
-      <section class="card" aria-label="Translator">
+      <section id="translator" class="card" aria-label="Translator">
         <div class="lang-bar">
           <select id="sourceLang" aria-label="Source language"></select>
           <button
@@ -41,15 +41,24 @@
 
         <div class="panes">
           <div class="pane pane-input">
+            <button
+              id="clearInputBtn"
+              class="btn btn-ghost icon-btn clear-input hidden"
+              title="Clear text"
+              aria-label="Clear text"
+            >
+              ✕
+            </button>
             <textarea
               id="inputText"
+              dir="auto"
               placeholder="Type or paste text…"
               maxlength="5000"
               aria-label="Text to translate"
             ></textarea>
             <p id="didYouMean" class="did-you-mean hidden">
               Did you mean:
-              <button id="correctionBtn" class="link-btn"></button>?
+              <button id="correctionBtn" class="link-btn" dir="auto"></button>?
             </p>
             <div class="pane-footer">
               <span id="shortcutHint">Ctrl + Enter to translate</span>
@@ -60,7 +69,7 @@
 
           <div class="pane pane-output">
             <div class="output-body" aria-live="polite">
-              <div id="output" class="output-text"></div>
+              <div id="output" class="output-text" dir="auto"></div>
               <div id="pronunciation" class="pronunciation hidden"></div>
             </div>
             <div class="pane-footer">
@@ -88,9 +97,10 @@
                   class="btn btn-ghost icon-btn"
                   title="Save to favorites"
                   aria-label="Save to favorites"
+                  aria-pressed="false"
                   disabled
                 >
-                  ⭐
+                  ☆
                 </button>
               </div>
             </div>
@@ -106,6 +116,14 @@
         <div id="selectionResult" class="result hidden" aria-live="polite"></div>
         <div id="extraDetails" class="result hidden" aria-live="polite"></div>
         <div id="idiomOutput" class="result hidden" aria-live="polite"></div>
+      </section>
+
+      <section id="recentCard" class="card hidden" aria-labelledby="recentTitle">
+        <div class="card-header">
+          <h2 id="recentTitle">🕘 Recent</h2>
+          <button id="clearRecentBtn" class="btn btn-ghost">Clear</button>
+        </div>
+        <ul id="recentList" class="recent-list"></ul>
       </section>
 
       <section class="card" aria-labelledby="favoritesTitle">

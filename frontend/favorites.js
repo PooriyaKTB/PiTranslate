@@ -9,18 +9,23 @@ export function saveFavorites(favorites) {
   localStorage.setItem("favorites", JSON.stringify(favorites));
 }
 
+export function findFavorite(text) {
+  const key = text.trim().toLowerCase();
+  return loadFavorites().find((f) => f.text.trim().toLowerCase() === key);
+}
+
 // Returns false if the word is already saved.
-export function addFavorite({ text, translation, pronunciation = "" }) {
+export function addFavorite({ text, translation, pronunciation = "", langCode, sourceLang, detectedLanguage }) {
+  if (findFavorite(text)) return false;
   const favorites = loadFavorites();
-  const exists = favorites.some(
-    (f) => f.text.trim().toLowerCase() === text.trim().toLowerCase()
-  );
-  if (exists) return false;
   favorites.push({
     id: crypto.randomUUID(),
     text,
     translation,
     pronunciation,
+    langCode, // target language; with sourceLang/detectedLanguage lets the entry be reopened later
+    sourceLang,
+    detectedLanguage,
     addedAt: new Date().toISOString(),
     reviewed: 0, // consecutive correct answers
     nextReview: null, // null = due now
@@ -51,8 +56,8 @@ export function renderFavorites(onRemove) {
     ...favorites.map((item) =>
       el("li", { className: "fav-item" }, [
         el("div", {}, [
-          el("div", { className: "fav-text", text: item.text }),
-          el("div", { className: "fav-translation", text: item.translation }),
+          el("div", { className: "fav-text", dir: "auto", text: item.text }),
+          el("div", { className: "fav-translation", dir: "auto", text: item.translation }),
           ...(item.pronunciation
             ? [el("div", { className: "pronunciation", text: item.pronunciation })]
             : []),

@@ -203,7 +203,7 @@ function renderWord(session, item) {
 
   const answer = el("details", {}, [
     el("summary", { text: "Show answer" }),
-    el("p", { className: "practice-answer", text: item.translation }),
+    el("p", { className: "practice-answer", dir: "auto", text: item.translation }),
     ...(item.pronunciation ? [el("p", { className: "pronunciation", text: item.pronunciation })] : []),
     feedback,
   ]);
@@ -220,7 +220,7 @@ function renderWord(session, item) {
         nextBtn,
       ]),
       el("p", { className: "practice-label", text: "Translate this:" }),
-      el("p", { className: "practice-word", text: item.text }),
+      el("p", { className: "practice-word", dir: "auto", text: item.text }),
       answer,
     ])
   );

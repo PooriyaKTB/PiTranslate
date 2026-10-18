@@ -44,6 +44,17 @@ export function getLangName(code) {
   return LANGUAGES.find((lang) => lang.code === code)?.name;
 }
 
+// Maps a language name from the API (e.g. a detected "English") to a code in the list.
+// A general name matches its first variant ("English" → "English (UK)").
+export function findLangCode(name) {
+  const n = (name || "").trim().toLowerCase();
+  if (!n) return "";
+  const lang =
+    LANGUAGES.find((l) => l.name.toLowerCase() === n) ||
+    LANGUAGES.find((l) => l.name.toLowerCase().startsWith(`${n} (`));
+  return lang?.code || "";
+}
+
 export function getSavedLang() {
   const code = localStorage.getItem(STORAGE_KEY);
   return getLangName(code) ? code : "";
