@@ -1,144 +1,467 @@
-function updateFavoritesUI() {
-  const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-  const list = document.getElementById("favoritesList");
-  list.innerHTML = "";
-  favorites.forEach((item) => {
-    const li = document.createElement("li");
-    li.textContent = `📌 ${item.text} → ${item.translation}`;
-    list.appendChild(li);
+import {
+  addFavorite,
+  findFavorite,
+  renderFavorites,
+  removeFavorite,
+  restoreFavorite,
+  clearFavorites,
+  loadFavorites,
+} from "./favorites.js";
+import { addRecent, clearRecent, renderRecent } from "./recent.js";
+import { getDueItems, startPractice, stopPractice, renderPractice } from "./practice.js";
+import { apiCall } from "./api.js";
+import { showToast } from "./toast.js";
+import { el } from "./dom.js";
+import { fillLanguageSelect, findLangCode, getLangName, saveLang } from "./languages.js";
+
+const MAX_CHARS = 5000;
+const $ = (id) => document.getElementById(id);
+
+const input = $("inputText");
+const output = $("output");
+const sourceSelect = $("sourceLang");
+const targetSelect = $("targetLang");
+const resultBoxes = ["selectionResult", "extraDetails", "idiomOutput"].map($);
+const DETECT_LABEL = "Detect language";
+const outputButtons = ["speakBtn", "copyBtn", "favBtn"].map($);
+
+// Last successful translation; null once the input changes. Same shape as recent/favorite entries:
+// { text, translation, pronunciation, langCode, sourceLang ("auto" or a code), detectedLanguage }
+let lastTranslation = null;
+
+function refreshLists() {
+  renderFavorites({ onOpen: showEntry, onRemove: removeFavoriteWithUndo });
+  renderRecent({
+    onOpen: showEntry,
+    onToggleFavorite: toggleFavorite,
+    isFavorite: (entry) => Boolean(findFavorite(entry)),
+  });
+  renderPractice();
+  updateFavButton();
+}
+
+function removeFavoriteWithUndo(id) {
+  const removed = removeFavorite(id);
+  refreshLists();
+  if (!removed) return;
+  showToast("Removed from favorites.", "success", {
+    label: "Undo",
+    onClick: () => {
+      restoreFavorite(removed);
+      refreshLists();
+    },
   });
 }
 
-function getNextPractice() {
-  const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-  if (favorites.length === 0) {
-    return null;
-  }
-  const index = Math.floor(Math.random() * favorites.length);
-  return favorites[index];
-}
-
-document.getElementById("nextPracticeBtn").addEventListener("click", () => {
-  const practice = getNextPractice();
-  const box = document.getElementById("practiceArea");
-  if (!practice) {
-    box.textContent = "No favorites to practice.";
+function toggleFavorite(entry) {
+  const existing = findFavorite(entry);
+  if (existing) {
+    removeFavoriteWithUndo(existing.id);
     return;
   }
-  box.innerHTML = `
-    <p><strong>Translate this:</strong> ${practice.text}</p>
-    <details>
-      <summary>Show Answer</summary>
-      <p>${practice.translation}</p>
-    </details>
-  `;
-});
+  addFavorite(entry);
+  showToast("Saved to favorites.", "success");
+  refreshLists();
+}
 
-document.getElementById("translateBtn").addEventListener("click", async () => {
-  const inputText = document.getElementById("inputText").value;
-  const targetLang = document.getElementById("targetLang").value;
+// ⭐ is filled when the current translation is already a favorite.
+function updateFavButton() {
+  const saved = Boolean(lastTranslation && findFavorite(lastTranslation));
+  const btn = $("favBtn");
+  btn.textContent = saved ? "⭐" : "☆";
+  btn.title = saved ? "Remove from favorites" : "Save to favorites";
+  btn.setAttribute("aria-label", btn.title);
+  btn.setAttribute("aria-pressed", String(saved));
+}
 
-  const res = await fetch(
-    "https://pooriya-pitranslate.hosting.codeyourfuture.io/api/translate",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ inputText, targetLang }),
-    }
+// ===== Auth (optional; loaded dynamically so the app works without the Firebase CDN) =====
+function showUser(user) {
+  $("userWelcome").textContent = user ? `👋 ${user.displayName || user.email}` : "";
+  $("loginLink").classList.toggle("hidden", Boolean(user));
+  $("logoutBtn").classList.toggle("hidden", !user);
+}
+
+import("./firebase.js")
+  .then(({ auth, onAuthStateChanged, signOut }) => {
+    $("logoutBtn").onclick = () =>
+      signOut(auth).then(() => (window.location.href = "index.html"));
+    onAuthStateChanged(auth, showUser);
+  })
+  .catch(() => showUser(null));
+
+// ===== Input helpers =====
+function requireText() {
+  const text = input.value.trim();
+  if (!text) {
+    showToast("Type some text first.", "warning");
+    input.focus();
+  }
+  return text || null;
+}
+
+function requireTargetLang() {
+  const name = getLangName(targetSelect.value);
+  if (!name) {
+    showToast("Choose a target language first.", "warning");
+    targetSelect.focus();
+  }
+  return name || null;
+}
+
+function sourceLangName() {
+  return getLangName(sourceSelect.value) || "auto";
+}
+
+function selectedText() {
+  return input.value.slice(input.selectionStart, input.selectionEnd).trim();
+}
+
+// ===== Output =====
+function setTranslation(value) {
+  lastTranslation = value;
+  output.textContent = value?.translation ?? "";
+  $("pronunciation").textContent = value?.pronunciation ?? "";
+  $("pronunciation").classList.toggle("hidden", !value?.pronunciation);
+  outputButtons.forEach((btn) => (btn.disabled = !value));
+  updateSpeakButton();
+  updateFavButton();
+}
+
+function clearResults() {
+  setTranslation(null);
+  sourceSelect.options[0].textContent = DETECT_LABEL;
+  $("didYouMean").classList.add("hidden");
+  resultBoxes.forEach(hideResult);
+}
+
+function hideResult(box) {
+  box.replaceChildren();
+  box.classList.add("hidden");
+}
+
+// Shows a result card (Selection / Examples / Idiom) with its own ✕ to close it.
+function showResult(box, children) {
+  const close = el("button", {
+    className: "btn btn-ghost icon-btn result-close",
+    text: "✕",
+    title: "Close",
+    ariaLabel: "Close",
+    onclick: () => hideResult(box),
+  });
+  box.replaceChildren(close, ...children);
+  box.classList.remove("hidden");
+}
+
+// A text and its translation on separate lines, each with its own direction, so
+// Persian/Arabic next to English doesn't scramble the line.
+function pairList(items) {
+  return el(
+    "ul",
+    { className: "pair-list" },
+    items.map(([text, translation]) =>
+      el("li", {}, [
+        el("div", { dir: "auto", text }),
+        el("div", { className: "muted", dir: "auto", text: translation }),
+      ])
+    )
   );
+}
 
-  const data = await res.json();
-  document.getElementById("output").textContent =
-    data.translation || "Translation failed";
+// Character counter + the ✕ clear button, which only shows when there's text.
+function updateInputState() {
+  $("clearInputBtn").classList.toggle("hidden", !input.value);
+  const count = input.value.length;
+  $("charCount").textContent = `${count} / ${MAX_CHARS}`;
+  $("charCount").classList.toggle("near-limit", count > MAX_CHARS * 0.9);
+}
+
+// Offers "Translate “…”" when part of the input is selected.
+function updateSelectionChip() {
+  const selected = selectedText();
+  const show = Boolean(selected) && selected !== input.value.trim();
+  $("selectionBtn").classList.toggle("hidden", !show);
+  $("shortcutHint").classList.toggle("hidden", show);
+  if (show) $("selectionBtn").textContent = `Translate “${selected}”`;
+}
+
+// ===== Actions =====
+async function translate() {
+  const button = $("translateBtn");
+  if (button.disabled) return;
+  const text = requireText();
+  if (!text) return;
+  const targetLang = requireTargetLang();
+  if (!targetLang) return;
+
+  clearResults();
+  const langCode = targetSelect.value;
+  const data = await apiCall(
+    "translate",
+    { inputText: text, targetLang, inputLang: sourceLangName() },
+    button
+  );
+  // Ignore the reply if the text changed while it was in flight
+  if (!data?.translation || input.value.trim() !== text) return;
+
+  // Favorites keep the corrected spelling when there was one
+  const entry = {
+    text: data.correction || text,
+    translation: data.translation,
+    pronunciation: data.pronunciation,
+    langCode,
+    sourceLang: sourceSelect.value,
+    detectedLanguage: data.detectedLanguage,
+  };
+  setTranslation(entry);
+  addRecent(entry);
+  refreshLists();
+  if (data.detectedLanguage) {
+    sourceSelect.options[0].textContent = `${data.detectedLanguage} — detected`;
+  }
+  if (data.correction) {
+    $("correctionBtn").textContent = data.correction;
+    $("didYouMean").classList.remove("hidden");
+  }
+}
+
+// Puts a saved translation back into the translator without calling the API.
+function showEntry(entry) {
+  clearResults();
+  input.value = entry.text;
+  updateInputState();
+  updateSelectionChip();
+
+  if (getLangName(entry.langCode)) {
+    targetSelect.value = entry.langCode;
+    saveLang(entry.langCode);
+  }
+  sourceSelect.value = getLangName(entry.sourceLang) ? entry.sourceLang : "auto";
+  if (sourceSelect.value === "auto" && entry.detectedLanguage) {
+    sourceSelect.options[0].textContent = `${entry.detectedLanguage} — detected`;
+  }
+
+  // Favorites saved before languages were stored take the currently selected one
+  setTranslation({ ...entry, langCode: entry.langCode || targetSelect.value });
+  $("translator").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+let clearTimer;
+input.addEventListener("input", () => {
+  updateInputState();
+  updateSelectionChip();
+  clearTimeout(clearTimer);
+  clearTimer = setTimeout(clearResults, 250);
 });
 
-document.getElementById("speakBtn").addEventListener("click", () => {
-  const text = document.getElementById("output").textContent;
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = document.getElementById("targetLang").value;
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    translate();
+  }
+});
+
+["select", "mouseup", "keyup"].forEach((type) =>
+  input.addEventListener(type, updateSelectionChip)
+);
+
+targetSelect.addEventListener("change", () => saveLang(targetSelect.value));
+
+$("translateBtn").addEventListener("click", translate);
+
+$("clearInputBtn").addEventListener("click", () => {
+  input.value = "";
+  clearResults();
+  updateInputState();
+  updateSelectionChip();
+  input.focus();
+});
+
+$("correctionBtn").addEventListener("click", () => {
+  input.value = $("correctionBtn").textContent;
+  updateInputState();
+  translate();
+});
+
+$("swapBtn").addEventListener("click", () => {
+  // With "Detect language", swap uses the language detected for the current translation
+  const detected = lastTranslation?.detectedLanguage;
+  const sourceCode = sourceSelect.value === "auto" ? findLangCode(detected) : sourceSelect.value;
+  if (!sourceCode) {
+    showToast(
+      detected && sourceSelect.value === "auto"
+        ? `${detected} isn't in the language list. Pick a source language to swap.`
+        : "Pick a source language to swap.",
+      "warning"
+    );
+    sourceSelect.focus();
+    return;
+  }
+  if (!requireTargetLang()) return;
+
+  sourceSelect.value = targetSelect.value;
+  targetSelect.value = sourceCode;
+  saveLang(targetSelect.value);
+  if (lastTranslation) {
+    input.value = lastTranslation.translation;
+    updateInputState();
+  }
+  clearResults();
+});
+
+$("selectionBtn").addEventListener("click", async (e) => {
+  const text = selectedText();
+  if (!text) return;
+  const targetLang = requireTargetLang();
+  if (!targetLang) return;
+
+  const data = await apiCall(
+    "translate",
+    { inputText: text, targetLang, inputLang: sourceLangName() },
+    e.currentTarget
+  );
+  if (!data?.translation) return;
+  showResult($("selectionResult"), [
+    el("h3", { text: "Selection" }),
+    pairList([[text, data.translation]]),
+    ...(data.pronunciation ? [el("p", { className: "pronunciation", text: data.pronunciation })] : []),
+  ]);
+});
+
+$("detailsBtn").addEventListener("click", async (e) => {
+  const text = requireText();
+  if (!text) return;
+  const targetLang = requireTargetLang();
+  if (!targetLang) return;
+
+  const data = await apiCall(
+    "details",
+    { inputText: text, targetLang, inputLang: sourceLangName() },
+    e.currentTarget
+  );
+  if (!data || input.value.trim() !== text) return;
+
+  const pairs = (items, key) =>
+    items.length
+      ? pairList(items.map((item) => [item[key], item.translation]))
+      : el("p", { className: "muted", text: "None found." });
+
+  showResult($("extraDetails"), [
+    el("h3", { text: "Examples" }),
+    pairs(data.examples ?? [], "text"),
+    el("h3", { text: "Synonyms" }),
+    pairs(data.synonyms ?? [], "word"),
+  ]);
+});
+
+$("idiomBtn").addEventListener("click", async (e) => {
+  const text = requireText();
+  if (!text) return;
+  const targetLang = requireTargetLang();
+  if (!targetLang) return;
+
+  const data = await apiCall(
+    "idiom",
+    { inputText: text, targetLang, inputLang: sourceLangName() },
+    e.currentTarget
+  );
+  if (!data || input.value.trim() !== text) return;
+
+  showResult($("idiomOutput"), [
+    el("h3", { text: "Idiom" }),
+    el("p", { dir: "auto", text: data.idiom }),
+    el("h3", { text: "Meaning" }),
+    el("p", { dir: "auto", text: data.meaning }),
+    el("h3", { text: `Equivalent in ${targetLang}` }),
+    el("p", { dir: "auto", text: data.equivalent }),
+  ]);
+});
+
+// ===== Output buttons (enabled only while lastTranslation is set) =====
+// Listen uses the device's own voices, which vary by OS/browser (macOS has no Persian
+// voice, for example), so the button is hidden when the translation's language has none.
+const canSpeak = "speechSynthesis" in window;
+let voices = [];
+
+function findVoice(langCode) {
+  if (!langCode) return undefined;
+  const base = langCode.split("-")[0];
+  return (
+    voices.find((v) => v.lang === langCode) ||
+    voices.find((v) => v.lang.split(/[-_]/)[0] === base)
+  );
+}
+
+function updateSpeakButton() {
+  const unavailable = !canSpeak || (lastTranslation && !findVoice(lastTranslation.langCode));
+  $("speakBtn").classList.toggle("hidden", Boolean(unavailable));
+}
+
+if (canSpeak) {
+  // Voices load asynchronously in most browsers
+  const loadVoices = () => {
+    voices = speechSynthesis.getVoices();
+    updateSpeakButton();
+  };
+  loadVoices();
+  speechSynthesis.addEventListener("voiceschanged", loadVoices);
+}
+
+$("speakBtn").addEventListener("click", () => {
+  const { translation, langCode } = lastTranslation;
+  const utterance = new SpeechSynthesisUtterance(translation);
+  utterance.lang = langCode;
+  utterance.voice = findVoice(langCode);
+  utterance.onerror = () => showToast("Couldn't play the audio.", "warning");
+
+  if (speechSynthesis.speaking) speechSynthesis.cancel();
   speechSynthesis.speak(utterance);
 });
 
-document.getElementById("inputText").addEventListener("mouseup", async () => {
-  const textarea = document.getElementById("inputText");
-  const selectedText = textarea.value
-    .substring(textarea.selectionStart, textarea.selectionEnd)
-    .trim();
-  const targetLang = document.getElementById("targetLang").value;
-
-  if (selectedText.length > 0) {
-    const res = await fetch(
-      "https://pooriya-pitranslate.hosting.codeyourfuture.io/api/translate",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inputText: selectedText, targetLang }),
-      }
-    );
-
-    const data = await res.json();
-    document.getElementById(
-      "highlightTranslation"
-    ).textContent = `🔎 "${selectedText}" means: ${data.translation}`;
-  } else {
-    document.getElementById("highlightTranslation").textContent = "";
+$("copyBtn").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(lastTranslation.translation);
+    showToast("Copied to clipboard.", "success");
+  } catch {
+    showToast("Couldn't copy. Select the text and copy it manually.", "warning");
   }
 });
 
-document.getElementById("detailsBtn").addEventListener("click", async () => {
-  const inputText = document.getElementById("inputText").value;
-  const res = await fetch(
-    "https://pooriya-pitranslate.hosting.codeyourfuture.io/api/details",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ inputText }),
-    }
-  );
-  const data = await res.json();
-  document.getElementById("extraDetails").innerHTML = `
-    <h4>Examples:</h4><p>${data.examples}</p>
-    <h4>Synonyms:</h4><p>${data.synonyms}</p>
-  `;
+$("favBtn").addEventListener("click", () => toggleFavorite(lastTranslation));
+
+$("clearRecentBtn").addEventListener("click", () => {
+  clearRecent();
+  refreshLists();
 });
 
-document.getElementById("idiomBtn").addEventListener("click", async () => {
-  const inputText = document.getElementById("inputText").value;
-  const res = await fetch(
-    "https://pooriya-pitranslate.hosting.codeyourfuture.io/api/idiom",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ inputText }),
-    }
-  );
-  const data = await res.json();
-  document.getElementById(
-    "idiomOutput"
-  ).innerHTML = `<h4>Related Idiom:</h4><p>${data.idiom}</p>`;
+// ===== Practice & favorites =====
+$("nextPracticeBtn").addEventListener("click", () => startPractice(loadFavorites()));
+$("dueWordsBtn").addEventListener("click", () => startPractice(getDueItems()));
+
+const clearDialog = $("clearDialog");
+$("clearFavoritesBtn").addEventListener("click", () => clearDialog.showModal());
+$("cancelClearBtn").addEventListener("click", () => clearDialog.close());
+// A click on the dialog element itself (not its content) is a click on the backdrop
+clearDialog.addEventListener("click", (e) => {
+  if (e.target === clearDialog) clearDialog.close();
+});
+$("confirmClearBtn").addEventListener("click", () => {
+  clearFavorites();
+  stopPractice();
+  refreshLists();
+  clearDialog.close();
 });
 
-document.getElementById("favBtn").addEventListener("click", () => {
-  const inputText = document.getElementById("inputText").value;
-  const translation = document.getElementById("output").textContent;
-  if (!inputText || !translation) return;
+// ===== Init (last, so everything above is defined) =====
+fillLanguageSelect(sourceSelect, { label: DETECT_LABEL, value: "auto", selected: "auto" });
+fillLanguageSelect(targetSelect, { label: "Choose target language" });
 
-  const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-  favorites.push({ text: inputText, translation });
-  localStorage.setItem("favorites", JSON.stringify(favorites));
-  updateFavoritesUI();
-});
+// Keys from older versions (pre-practiceSession practice state, old clear-favorites checkbox)
+["practiceQueue", "practiceIndex", "practiceStarted", "timerWasReset", "skipDeleteConfirm"].forEach(
+  (key) => localStorage.removeItem(key)
+);
 
-document.getElementById("themeToggle").addEventListener("click", () => {
-  const html = document.documentElement;
-  const current = html.getAttribute("data-theme");
-  const next = current === "dark" ? "light" : "dark";
-  html.setAttribute("data-theme", next);
-  localStorage.setItem("theme", next);
-});
-window.addEventListener("DOMContentLoaded", () => {
-  const savedTheme = localStorage.getItem("theme") || "light";
-  document.documentElement.setAttribute("data-theme", savedTheme);
-});
+if (/Mac|iPhone|iPad/.test(navigator.userAgent)) {
+  $("shortcutHint").textContent = "⌘ + Enter to translate";
+}
 
-updateFavoritesUI();
+refreshLists();

@@ -1,53 +1,63 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>PiTranslate</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PiTranslate — AI translator &amp; vocabulary trainer</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>"
+    />
+    <script src="theme.js"></script>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <header>
-      <h1>🌍 PiTranslate</h1>
-      <button id="themeToggle">🌓 Toggle Theme</button>
-    </header>
-    <main class="translator">
-      <textarea id="inputText" placeholder="Enter text..."></textarea>
-      <select id="targetLang">
-        <option value="fr-FR">French</option>
-        <option value="de-DE">German</option>
-        <option value="fa-IR">Persian</option>
-        <option value="ar-SA">Arabic</option>
-        <option value="zh-CN">Chinese</option>
-        <option value="jp-JP">Japanese</option>
-        <option value="es-ES">Spanish</option>
-        <option value="ru-RU">Russian</option>
-        <option value="en-GB">English (UK)</option>
-        <option value="en-US">English (US)</option>
-      </select>
-      <div class="btn-group">
-        <button id="translateBtn">Translate</button>
-        <button id="speakBtn">🔊 Speak</button>
-        <button id="detailsBtn">📚 Details</button>
-        <button id="idiomBtn">💡 Idiom</button>
-        <button id="favBtn">⭐ Favorite</button>
+    <header class="site-header">
+      <div class="page-wrap">
+        <a href="index.html" class="brand">🌍 PiTranslate</a>
+        <div class="header-actions">
+          <a href="login-signup.html" class="btn btn-ghost">Log in</a>
+          <button class="btn btn-ghost icon-btn" data-theme-toggle></button>
+        </div>
       </div>
-      <p id="output"></p>
-      <div id="highlightTranslation"></div>
-      <div id="extraDetails"></div>
-      <div id="idiomOutput"></div>
+    </header>
+
+    <main class="hero">
+      <h1>Translate, understand, remember.</h1>
+      <p class="lead">
+        An AI-powered translator that also explains words with examples and
+        idioms - and helps you keep them with spaced-repetition practice.
+      </p>
+
+      <div class="hero-actions">
+        <a href="login-signup.html?mode=signup" class="btn btn-primary">
+          Get started
+        </a>
+        <a href="app.html" class="btn">Try without an account</a>
+      </div>
+
+      <div class="features">
+        <div class="feature">
+          <div>🌍</div>
+          <h3>36 languages</h3>
+          <p>Natural translations with automatic language detection.</p>
+        </div>
+        <div class="feature">
+          <div>📚</div>
+          <h3>Examples &amp; idioms</h3>
+          <p>See words in context, with synonyms and matching idioms.</p>
+        </div>
+        <div class="feature">
+          <div>🔊</div>
+          <h3>Pronunciation</h3>
+          <p>See how to say every word, and hear it on supported devices.</p>
+        </div>
+        <div class="feature">
+          <div>🧠</div>
+          <h3>Practice</h3>
+          <p>Save words and review them right before you'd forget.</p>
+        </div>
+      </div>
     </main>
-
-    <section>
-      <h3>⭐ Favorites</h3>
-      <ul id="favoritesList"></ul>
-    </section>
-
-    <section>
-      <h3>📚 Spaced Repetition Practice</h3>
-      <button id="nextPracticeBtn">Next Word</button>
-      <div id="practiceArea"></div>
-    </section>
-
-    <script src="main.js"></script>
   </body>
 </html>
